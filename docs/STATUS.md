@@ -110,6 +110,16 @@ reconciliation and reconnect still pass (V, Mango protocol fixture). The unused 
 title was removed from the adapter-facing context; pure MangoLogic behavior is
 unchanged. Native Hyprland behavior remains U/L. Node: 153 passed.
 
+### 2.4 Hyprland reconciliation
+
+Removed the unconditional 10-second refresh. Health-socket reconnect still reconciles;
+the 250-ms bounded startup settle loop and one-shot seed remain (U/L). The native
+adapter still loads without a compositor, and provider replacement tests pass (V).
+No actual Hyprland reconnect is claimed. On the Inspiron, save work, restart the
+Hyprland session, and confirm the rail/dock recover without manual shell restart;
+inspect Quickshell logs for reconnect/refresh failures. Determine whether native
+Quickshell reconnect makes the retained health socket redundant before removing it.
+
 ## Phase 0: repository (done)
 
 The tree is a Git repository. `checkpoints/` (30 MB: history bundles and the foundation
