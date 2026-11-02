@@ -12,20 +12,20 @@ import "Skin.js" as Skin
 // [commands.custom]; a skin can name one but never supply an argv.
 Singleton {
     id: root
-    // ctx: {screen, y (screen y of the item, for dealing), from: "left" | "top"}
+    // ctx: {screen, y (screen y of the item, for dealing)}
     function run(action, ctx) {
         const a = Skin.parseAction(action);
         if (!a || !available(action)) return false;
-        const c = ctx || {}, screen = c.screen || DesktopState.focusedScreen, from = c.from || "left";
+        const c = ctx || {}, screen = c.screen || DesktopState.focusedScreen;
         switch (a.name) {
         case "none": return true;
         case "launcher": Navigation.launcherRequested(); return true;
-        case "deal": return deal(a.arg, screen, c.y, from);
-        case "notifications": return deal("notifications", screen, c.y, from);
-        case "clipboard": return deal("clipboard", screen, c.y, from);
-        case "tray": Navigation.trayItem = null; if (!deal("tray", screen, c.y, from)) return false; Navigation.expand("tray"); return true;
-        case "sheet": if (!Settings.enableCards) return false; Navigation.open(c.group || "notifications", screen, c.y, from); Navigation.expand(a.arg); return true;
-        case "history": if (!deal("notifications", screen, c.y, from)) return false; Navigation.expand("history"); return true;
+        case "deal": return deal(a.arg, screen, c.y);
+        case "notifications": return deal("notifications", screen, c.y);
+        case "clipboard": return deal("clipboard", screen, c.y);
+        case "tray": Navigation.trayItem = null; if (!deal("tray", screen, c.y)) return false; Navigation.expand("tray"); return true;
+        case "sheet": if (!Settings.enableCards) return false; Navigation.open(c.group || "notifications", screen, c.y); Navigation.expand(a.arg); return true;
+        case "history": if (!deal("notifications", screen, c.y)) return false; Navigation.expand("history"); return true;
         case "mute": AudioState.toggleMute(); return true;
         case "microphone": AudioState.toggleMic(); return true;
         case "volume": AudioState.setVolume(AudioState.volume + step(a.arg)); return true;
@@ -78,9 +78,9 @@ Singleton {
         return a.name.charAt(0).toUpperCase() + a.name.slice(1);
     }
     function step(arg) { const v = parseFloat(arg); return isFinite(v) ? v / 100 : 0.05; }
-    function deal(name, screen, y, from) {
+    function deal(name, screen, y) {
         if (!Settings.enableCards || !Settings.group(name)) return false;
-        Navigation.open(name, screen, y, from); return true;
+        Navigation.open(name, screen, y); return true;
     }
     function workspace(arg, screen) {
         const spaces = DesktopState.context(screen ? screen.name : "", false).spaces || [];

@@ -34,15 +34,16 @@ with tempfile.TemporaryDirectory() as tmp:
             def ipc(method,*args): return run('quickshell','ipc','-p',path,'call','test',method,*map(str,args))
             def state(): return json.loads(ipc('state'))
             def settled(): return state()['phase'] > .999
-            for group in ['sound','light','connections','media','notifications','session','settings']:
+            for group in ['sound','levels','battery','connections','media','notifications','power','settings']:
                 ipc('group',group,240)
                 wait(lambda: state()['group']==group and settled(),group+' deployment')
                 s=state()
-                if group=='session':run('grim',str(OUT/'v2-power-front.png'))
+                if group=='power':run('grim',str(OUT/'v2-power-front.png'))
                 if group=="sound":run("grim",str(OUT/"cards-deployed.png"))
-                assert all(abs(c['x']+c['width']/2-240)<1 for c in s['cards'])
-                # Light has no back, so its flip test uses Charge; Session uses Shut Down.
-                idx=1 if group in ('session','light') else 0
+                assert all(abs(c['y']+c['height']/2-s['cards'][0]['y']-s['cards'][0]['height']/2)<1 for c in s['cards'])
+                assert all(b['x'] > a['x'] for a,b in zip(s['cards'],s['cards'][1:]))
+                # Exercise Charge in Battery and Shut Down in Power.
+                idx=1 if group=='power' else 0
                 if s['cards']:
                     angle=s['cards'][idx]['rotation']
                     ipc('select',idx)
@@ -59,14 +60,14 @@ with tempfile.TemporaryDirectory() as tmp:
                     point=json.loads(ipc('returnPoint',idx))
                     run(pointer,'1280','720','move',str(round(point['x'])),str(round(point['y'])),'down','up')
                     wait(lambda: state()['cards'][idx]['flip']<.001,'flip reverse')
-                if group=='light':
+                if group=='levels':
                     wait(lambda:state()['brightness']['available'],'safe brightness backend')
-                    c=state()['cards'][0];x=round(c['x']+c['width']/2);y=round(c['y']+c['height']/2)
+                    c=state()['cards'][1];x=round(c['x']+c['width']/2);y=round(c['y']+c['height']/2)
                     before=state()['brightness']['value']
                     run(pointer,'1280','720','move',str(x),str(y),'down','move',str(x+35),str(y),'up')
                     wait(lambda:state()['brightness']['value']>before+.05,'deployed brightness drag through safe CLI backend')
                     run('grim',str(OUT/'v2-brightness-fill.png'))
-                if group=='session':
+                if group=='power':
                     assert s['pages']==1
                     assert [c['kind'] for c in s['cards']]==['suspend','poweroff','reboot']
                     ipc('page',1);wait(lambda: state()['page']==0 and settled(),'pagination')
@@ -114,7 +115,7 @@ with tempfile.TemporaryDirectory() as tmp:
             ipc('close');wait(lambda:state()['phase']<.001,'keyboard group close')
             print('PASS: real keyboard card selection, flip, back action, expanded-sheet focus and return-to-origin',flush=True)
             # Rapid transitions: last request wins without stale timers or destroyed models.
-            for name in ['sound','session','connections','sound']:
+            for name in ['sound','power','connections','sound']:
                 ipc('group',name,240);time.sleep(.05)
             wait(lambda: state()['group']=='sound' and settled(),'interrupted group')
             run('swaymsg','output HEADLESS-1 mode 320x240')
@@ -185,7 +186,7 @@ with tempfile.TemporaryDirectory() as tmp:
             assert not (OUT/'suspend-substitute').exists(),'suspend ran after lock failure'
             ipc('failingLock','false')
             print('PASS: failed locker prevents suspend (harmless command substitutes)',flush=True)
-            ipc('group','session',240);wait(settled,'confirmation group')
+            ipc('group','power',240);wait(settled,'confirmation group')
             ipc('flip',1);wait(lambda:state()['session']['pending']=='poweroff','card confirmation selection')
             wait(lambda:state()['session']['pending']=='','confirmation expiration',seconds=8)
             wait(lambda:state()['cards'][1]['flip']<.001,'expired confirmation turns the card back')
@@ -204,10 +205,12 @@ with tempfile.TemporaryDirectory() as tmp:
                     ipc('media');wait(lambda:peerState().get('playing',False) and state()['media']['playing'],'MPRIS PlayPause')
                     ipc('next');wait(lambda:peerState().get('next',0)==1,'MPRIS Next')
                     ipc('trayActivate');wait(lambda:peerState().get('activate',0)==1,'SNI activation')
-                    ipc('trayMenu');time.sleep(.6)
+                    ipc('trayMenu')
+                    wait(lambda: json.loads(ipc('trayActionPoint')) is not None, 'tray menu action ready')
+                    point=json.loads(ipc('trayActionPoint'))
                     run('grim',str(OUT/'tray-menu.png'))
-                    # Sheet anchored at x=260, y=50; its first menu action is below heading/back.
-                    run(pointer,'1280','720','move','500','175','down','up')
+                    # Click the actual rendered action, independent of sheet origin.
+                    run(pointer,'1280','720','move',str(round(point['x'])),str(round(point['y'])),'down','up')
                     wait(lambda:peerState().get('menu',0)==1,'DBusMenu action through vellum sheet')
                     ipc('invoke',peerState()['notification']);wait(lambda:peerState().get('action',0)==1,'actual Notification ActionInvoked delivery')
                     print('PASS: native MPRIS, SNI/DBusMenu and notification action transport against explicit application fixtures',flush=True)

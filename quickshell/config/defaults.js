@@ -183,16 +183,6 @@ var values = {
       "sheet": "",
       "show": "always"
     },
-    "light": {
-      "glyph": "☀",
-      "label": "Light",
-      "cards": [
-        "brightness",
-        "battery"
-      ],
-      "sheet": "",
-      "show": "always"
-    },
     "connections": {
       "glyph": "↔",
       "label": "Connections",
@@ -218,17 +208,6 @@ var values = {
       "cards": [
         "notifications",
         "dnd"
-      ],
-      "sheet": "",
-      "show": "always"
-    },
-    "session": {
-      "glyph": "⏻",
-      "label": "Session",
-      "cards": [
-        "suspend",
-        "poweroff",
-        "reboot"
       ],
       "sheet": "",
       "show": "always"

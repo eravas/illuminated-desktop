@@ -61,6 +61,33 @@ Use headless Sway here; actual Hyprland/Mango and hardware acceptance remain L.
 The logs are `artifacts/hyprland-{nested,headless}.log` and
 `artifacts/mango-headless.log`.
 
+## Phase 1.7: left-origin hands and duplicate groups
+
+- Removed Navigation's top-origin/trigger-x state, the old vertical Geometry layout,
+  CardsLayer's alternate travel/mask/sheet branches and action-origin arguments.
+- Removed packaged groups `light` and `session`; retained `levels`, `battery`, `power`,
+  `sound` and `media`. Updated docs, generated defaults and configuration tests.
+- Converted geometry tests to rotated left-to-right bounds, separation and pagination,
+  retaining tiny-screen, landscape and aligned-layout coverage (153 Node tests pass, U).
+- Python suite: 78 passed (U). Non-strict QML validation: 0, warnings retained.
+- Artifacts suite: 0 (V), including cards, keyboard/pointer, tiny-screen pagination,
+  notifications/history, safe session actions and application protocol fixtures.
+  The desk-click fallback now stays outside the rail input pass-through region;
+  the tray click resolves the rendered action instead of assuming obsolete coordinates.
+- Audio suite: 0 (V, actual private PipeWire/WirePlumber and virtual nodes).
+- Whole-suite recheck: artifacts, smoke, audio, compositor and greeter pass (V).
+  Foundation retains launcher reopen failure; reload and single-config retain their
+  baseline request timeouts. Session UI initially exposed one leftover test reference
+  to the removed group; after changing that reference to `power`, its complete
+  1280/1366 and long-locker checks pass (V). No assertion or deadline was removed.
+  Hardware/compositor L limitations above remain unchanged.
+
+Temporary startup diagnosis (`dev/cache/profile-startup.py`, ignored): status IPC
+returned in 0.30 s, notification D-Bus Notify returned successfully in 21.83 s.
+Observed Canvas paints were at most 529 ms, with one material decode of 761 ms.
+This does not establish that Canvas explains the 8/15-second baseline timeouts;
+blocking service startup remains to be investigated. No test deadlines were changed.
+
 ## Phase 0: repository (done)
 
 The tree is a Git repository. `checkpoints/` (30 MB: history bundles and the foundation
@@ -98,7 +125,7 @@ Size: QML files 96 → 83. Code (QML/JS/Python/CJS/shell/TOML, excluding the gen
 46 MB → 20 MB compressed: a 10 MB tree, mostly skin images and the wallpaper, plus about
 10 MB of `.git`, which holds the same images once more.
 
-### Deferred from Phase 1, and why
+### Originally deferred from Phase 1 (first two items completed in Phase 1.7)
 
 - **The `origin: "top"` deck path** (`Navigation.origin/triggerX`, `CardsLayer` `fromLeft`
   branches, `Geometry.deck`). It is not bar-only: it is Navigation's fallback when

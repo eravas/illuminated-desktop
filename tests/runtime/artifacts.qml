@@ -43,8 +43,8 @@ ShellRoot {
     }
     IpcHandler {
         target: "test"
-        function group(name: string, lane: real): void { launcher.dismiss(); Navigation.open(name, Quickshell.screens[0], lane, "top"); }   // v6 geometry; rail hands: function hand()
-        function hand(name: string, lane: real): void { launcher.dismiss(); Navigation.open(name, Quickshell.screens[0], lane, "left"); }
+        function group(name: string, lane: real): void { launcher.dismiss(); Navigation.open(name, Quickshell.screens[0], lane); }
+        function hand(name: string, lane: real): void { launcher.dismiss(); Navigation.open(name, Quickshell.screens[0], lane); }
         function close(): void { Navigation.dismiss(); launcher.dismiss(); }
         function page(delta: int): void { deck.turnPage(delta); }
         function select(index: int): void { deck.selectedIndex = index; }
@@ -55,7 +55,7 @@ ShellRoot {
         function buttonPoint(index: int, label: string): string { function find(node) { if(node.text === label && node.visible && node.enabled) { const p=node.mapToItem(deck.contentItem,node.width/2,node.height/2);return {x:p.x,y:p.y,width:node.width,height:node.height}; } for(const child of node.children || []) { const p=find(child);if(p)return p; } return null; } return JSON.stringify(find(deck.cardItems.itemAt(index).card)); }
         // Turning a card back: its dog-ear when it has one, otherwise a click on the desk.
         function dogEarPoint(index: int): string { function find(node) { if (node.objectName === "card-dog-ear" && node.visible) { const p=node.mapToItem(deck.contentItem,node.width/2,node.height/2);return {x:p.x,y:p.y,width:node.width,height:node.height}; } for (const child of node.children || []) { const p=find(child);if(p)return p; } return null; } return JSON.stringify(find(deck.cardItems.itemAt(index).card)); }
-        function returnPoint(index: int): string { const ear = JSON.parse(dogEarPoint(index)); return JSON.stringify(ear || {x: 8, y: deck.height - 8, width: 1, height: 1}); }
+        function returnPoint(index: int): string { const ear = JSON.parse(dogEarPoint(index)); return JSON.stringify(ear || {x: deck.chromeLeft + 8, y: deck.height - 8, width: 1, height: 1}); }
         function armDelay(ms: int): void { Settings.confirmArmDelay = ms; }
         function confirmTimeout(ms: int): void { Settings.confirmTimeout = ms; }
         function lockReady(ready: bool): void { Settings.lockReturnsWhenReady = ready; }
@@ -65,10 +65,21 @@ ShellRoot {
         function gesture(): void { root.gestureOpened = !root.gestureOpened; }
         function media(): void { MediaState.toggle(); }
         function next(): void { MediaState.next(); }
+        function trayActionPoint(): string {
+            function find(node) {
+                if (node.text === "Fixture action" && node.visible && node.enabled && node.width > 0) {
+                    const p = node.mapToItem(deck.contentItem, node.width / 2, node.height / 2);
+                    return {x: p.x, y: p.y};
+                }
+                for (const child of node.children || []) { const p = find(child); if (p) return p; }
+                return null;
+            }
+            return JSON.stringify(find(deck.contentItem));
+        }
         function trayActivate(): void { if (SystemTray.items.values.length) SystemTray.items.values[0].activate(); }
         function trayMenu(): void {
             if (!SystemTray.items.values.length) return;
-            Navigation.open("tray", Quickshell.screens[0], 600, "top"); Navigation.trayItem = SystemTray.items.values[0]; Navigation.expand("tray");
+            Navigation.open("tray", Quickshell.screens[0], 360); Navigation.trayItem = SystemTray.items.values[0]; Navigation.expand("tray");
         }
         function session(action: string, confirmed: bool): void { SessionState.select(action); if (confirmed) SessionState.confirm(); else SessionState.cancel(); }
         function failingLock(fail: bool): void { Settings.lockCommand = fail ? ["sh", "-c", "exit 7"] : ["sh", "-c", "touch /project/artifacts/development/lock-substitute"]; }

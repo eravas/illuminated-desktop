@@ -25,15 +25,12 @@ PanelWindow {
     // Membership, orientation and sheets come from [groups] and [cards] in config.
     readonly property var groupSpec: Settings.group(displayGroup) || ({cards: [], sheet: ""})
     readonly property var kinds: groupSpec.cards || []
-    // Hands from the rail travel in from the left at the dealing initial's height; decks opened
-    // with origin "top" (tests, and Navigation's fallback with the rail off) travel down from above. Space the rail and a permanent dock take is kept clear.
-    readonly property bool fromLeft: Navigation.origin === "left"
+    // Hands travel in from the left; keep rail and permanent dock space clear.
     readonly property int chromeLeft: Settings.enableRail ? Settings.railReserved : 0
-    readonly property int chromeTop: fromLeft ? (Settings.enableDock && Settings.dockMode(screen ? screen.name : "", height) === "permanent" ? Settings.dockReserved : 0) : 0
+    readonly property int chromeTop: (Settings.enableDock && Settings.dockMode(screen ? screen.name : "", height) === "permanent" ? Settings.dockReserved : 0)
     readonly property var deckOptions: ({cardWidth:Settings.cardWidth, landscapeWidth:Settings.landscapeCardWidth, gap:Math.max(Settings.cardGap, Settings.selectionLift + 8), margin:Settings.cardMargin, rotation:Math.min(7,Math.abs(Settings.cardRotation)), aligned:Settings.deckAligned, lift:Settings.selectionLift})
     readonly property var deckItems: kinds.map(kind => ({landscape: Settings.card(kind).orientation === "landscape"}))
-    readonly property var layout: fromLeft ? Geometry.dealLeft(width, height, Navigation.lane, deckItems, page, chromeLeft, chromeTop, deckOptions)
-                                           : Geometry.deck(width, height, Navigation.triggerX, deckItems, page, chromeTop, deckOptions)
+    readonly property var layout: Geometry.dealLeft(width, height, Navigation.lane, deckItems, page, chromeLeft, chromeTop, deckOptions)
     readonly property bool active: Navigation.group !== "" || Navigation.device !== ""
     screen: Navigation.screen || Quickshell.screens[0]
     anchors { top: true; bottom: true; left: true; right: true }
@@ -42,7 +39,7 @@ PanelWindow {
     WlrLayershell.layer: WlrLayer.Overlay
     WlrLayershell.keyboardFocus: active ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
     // Input passes through to the rail so it stays usable while a hand is out.
-    mask: Region { x: root.fromLeft ? root.chromeLeft : 0; y: root.fromLeft ? 0 : root.chromeTop; width: Math.max(0, root.width - x); height: Math.max(0, root.height - y) }
+    mask: Region { x: root.chromeLeft; y: 0; width: Math.max(0, root.width - x); height: Math.max(0, root.height - y) }
     color: "transparent"
     visible: active || phase > 0 || sheet.progress > 0 || Navigation.device !== ""
     function sync() {
@@ -88,9 +85,8 @@ PanelWindow {
                 readonly property var card: cardLoader.item
                 readonly property string kind: root.kinds[placement.modelData.index] || ""
                 readonly property real amount: Geometry.clamp(root.phase * (1 + (root.layout.cards.length - 1) * 0.16) - index * 0.16, 0, 1)
-                readonly property bool sideways: modelData.offscreenX !== undefined
-                readonly property real travelX: sideways ? modelData.offscreenX + (modelData.x - modelData.offscreenX) * amount : modelData.x
-                readonly property real travelY: sideways ? modelData.y : modelData.offscreenY + (modelData.y - modelData.offscreenY) * amount
+                readonly property real travelX: modelData.offscreenX + (modelData.x - modelData.offscreenX) * amount
+                readonly property real travelY: modelData.y
                 // Whole pixels while dealing too when grid-aligned, so text never lands between pixels.
                 x: Settings.deckAligned ? Math.round(travelX) : travelX
                 y: Settings.deckAligned ? Math.round(travelY) : travelY
@@ -129,7 +125,7 @@ PanelWindow {
         Repeater { id: cards; model: root.layout.cards; delegate: Placement {} }
 
         Row {
-            x: root.fromLeft ? root.chromeLeft + 16 : Math.max(8, Math.min(root.width - width - 8, root.layout.lane - width / 2))
+            x: root.chromeLeft + 16
             y: root.height - 40
             spacing: Theme.gap
             visible: root.layout.pages > 1 && Navigation.sheet === ""
@@ -141,11 +137,11 @@ PanelWindow {
             id: sheet
             width: Math.min(Settings.sheetWidth, root.width - 24)
             height: Math.min(Settings.sheetHeight, root.height - root.chromeTop - 32)
-            // Beside the rail at the dealing initial's height, or under the lane for a top-origin deck.
-            x: root.fromLeft ? root.chromeLeft + 12 : Math.max(12, Math.min(root.width - width - 12, Navigation.triggerX - width / 2))
-            y: root.fromLeft ? Math.max(root.chromeTop + 12, Math.min(root.height - height - 12, Navigation.lane - height / 2)) : root.chromeTop + 12
+            // Beside the rail at the dealing initial's height.
+            x: root.chromeLeft + 12
+            y: Math.max(root.chromeTop + 12, Math.min(root.height - height - 12, Navigation.lane - height / 2))
             z: 200
-            from: root.fromLeft ? "left" : "top"
+            from: "left"
             offX: x; offY: y
             opened: Navigation.sheet !== "" && root.active
             // Keep content alive during retraction; release only after the sheet closes.
