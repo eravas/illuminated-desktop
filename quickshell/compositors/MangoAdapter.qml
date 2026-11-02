@@ -40,7 +40,11 @@ Scope {
             mark(channel, true); error = "";
         } catch (e) { mark(channel, false); error = String(e); }
     }
-    function context(name, allOutputs) { return Logic.context(monitors, tags, clients, name, allOutputs, ready); }
+    function context(name, allOutputs) {
+        const state = Logic.context(monitors, tags, clients, name, allOutputs, ready);
+        delete state.title; // The former bar was the only title consumer.
+        return state;
+    }
     function activate(space, extend) {
         if (!ready || !/^[A-Za-z0-9_.:-]+$/.test(space.output)) return;
         const monitor = monitors.find(m => m.name === space.output);

@@ -102,6 +102,14 @@ blocking service startup remains to be investigated. No test deadlines were chan
 - 153 Node tests pass (U). This task adds a narrow adapter-facing model API; pure
   WindowLogic and Mango protocol logic are unchanged. Native verification remains L.
 
+### 2.2 Stable workspace delegates
+
+Rail workspaces now use ids with live lookups. The extended runtime fixture counts
+all nine workspace delegates and proves title churn creates none, while selection,
+reconciliation and reconnect still pass (V, Mango protocol fixture). The unused bar
+title was removed from the adapter-facing context; pure MangoLogic behavior is
+unchanged. Native Hyprland behavior remains U/L. Node: 153 passed.
+
 ## Phase 0: repository (done)
 
 The tree is a Git repository. `checkpoints/` (30 MB: history bundles and the foundation

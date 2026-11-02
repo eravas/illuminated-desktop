@@ -52,17 +52,7 @@ Scope {
         const seeded = !root.settled && seed.workspace !== 0 && monitor && seed.monitor === monitor.name;
         const selection = spaces.filter(w => w.active || (seeded && w.id === seed.workspace)).map(w => w.id);
         return {ready: !!monitor, modelKind: kind, monitorName: monitor ? monitor.name : name, monitorFocused: monitor ? monitor.focused || seeded : false,
-            spaces: spaces, selection: selection,
-            title: monitor && monitor.focused && root.toplevelOn(Hyprland.activeToplevel, monitor) ? Hyprland.activeToplevel.title
-                : monitor && monitor.activeWorkspace ? "Workspace " + monitor.activeWorkspace.name
-                : seeded ? "Workspace " + seed.name : "Waiting for Hyprland"};
-    }
-    // Hyprland keeps reporting the last active window after focus moves to an empty
-    // workspace; only use it while it is on that monitor's active workspace.
-    function toplevelOn(toplevel, monitor) {
-        if (!toplevel) return false;
-        if (toplevel.workspace === undefined || !monitor.activeWorkspace) return true;   // older Quickshell: no workspace link
-        return toplevel.workspace === monitor.activeWorkspace;
+            spaces: spaces, selection: selection};
     }
     function activate(space, extend) {
         if (!ready) return;

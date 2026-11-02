@@ -1,5 +1,6 @@
 pragma ComponentBehavior: Bound
 import QtQuick
+import Quickshell
 import "../theme"
 import "../config"
 import "../materials"
@@ -9,6 +10,7 @@ import "../materials"
 Item {
     id: root
     required property var context
+    property alias workspaceItems: workspaceItems
     property var tag: null
     readonly property int rowHeight: Math.round(30 * Theme.typeScale)
     implicitHeight: list.contentHeight
@@ -24,23 +26,29 @@ Item {
             id: column
             width: list.width
             Repeater {
-                model: root.context.spaces
+                id: workspaceItems
+                model: ScriptModel {
+                    values: root.context.spaces
+                    objectProp: "id"
+                    comparisonMode: ObjectComparison.Identity
+                }
                 Item {
                     id: slot
                     required property var modelData
                     required property int index
-                    readonly property bool occupied: modelData.count !== undefined ? modelData.count > 0 : modelData.toplevels ? modelData.toplevels.values.length > 0 : false
-                    readonly property string text: Theme.numeral(modelData.id) || String(modelData.name).slice(0, 3)
-                    readonly property string named: modelData.name && String(modelData.name) !== String(modelData.id) ? String(modelData.name) : ""
+                    readonly property var space: (root.context.spaces || []).find(w => w.id === modelData.id) || ({})
+                    readonly property bool occupied: space.count !== undefined ? space.count > 0 : space.toplevels ? space.toplevels.values.length > 0 : false
+                    readonly property string text: Theme.numeral(space.id) || String(space.name).slice(0, 3)
+                    readonly property string named: space.name && String(space.name) !== String(space.id) ? String(space.name) : ""
                     width: column.width; height: root.rowHeight
                     Accessible.role: Accessible.Button
-                    Accessible.name: "Workspace " + modelData.id + (named ? ", " + named : "") + (modelData.active ? ", active" : "")
+                    Accessible.name: "Workspace " + space.id + (named ? ", " + named : "") + (space.active ? ", active" : "")
                     Text {
                         anchors.centerIn: parent
-                        visible: !slot.modelData.active
+                        visible: !slot.space.active
                         text: slot.text; textFormat: Text.PlainText
                         font.family: Theme.cardFamily; font.bold: Theme.cardBold; font.pixelSize: Math.round(20 * Theme.typeScale)
-                        color: slot.modelData.urgent ? Theme.urgent : slot.occupied ? Theme.mutedInk : Theme.disabledInk
+                        color: slot.space.urgent ? Theme.urgent : slot.occupied ? Theme.mutedInk : Theme.disabledInk
                     }
                     MouseArea {
                         anchors.fill: parent
@@ -48,7 +56,7 @@ Item {
                         cursorShape: Qt.PointingHandCursor
                         onEntered: if (root.tag) root.tag.show(slot, slot.named || ("Workspace " + slot.text), "right")
                         onExited: if (root.tag) root.tag.hide()
-                        onClicked: function(mouse) { root.context.activateWorkspace(slot.modelData, !!(mouse.modifiers & (Qt.ControlModifier | Qt.ShiftModifier))); }
+                        onClicked: function(mouse) { root.context.activateWorkspace(slot.space, !!(mouse.modifiers & (Qt.ControlModifier | Qt.ShiftModifier))); }
                     }
                 }
             }

@@ -21,7 +21,7 @@ Singleton {
     readonly property var logoutCommand: adapter ? adapter.logoutCommand : []
     readonly property var capabilities: adapter ? adapter.capabilities : ({multipleVisible:false, toggleSelection:false, urgency:false, windowState:false})
     readonly property var focusedScreen: Quickshell.screens.find(s => s.name === focusedOutput) || Quickshell.screens[0] || null
-    function context(name, allOutputs) { return adapter ? adapter.context(name, allOutputs) : ({ready:false, modelKind:kind, monitorName:name, monitorFocused:false, spaces:[], selection:[], title:"Waiting for a supported compositor"}); }
+    function context(name, allOutputs) { return adapter ? adapter.context(name, allOutputs) : ({ready:false, modelKind:kind, monitorName:name, monitorFocused:false, spaces:[], selection:[]}); }
     readonly property var windows: adapter && adapter.windows ? adapter.windows : []
     readonly property var windowObjects: adapter && adapter.windowObjects !== undefined ? adapter.windowObjects : windows
     function windowById(id) { return windows.find(w => w.id === id) || ({}); }

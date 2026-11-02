@@ -10,6 +10,5 @@ QtObject {
     readonly property bool monitorFocused: state.monitorFocused
     readonly property var spaces: state.spaces
     readonly property var selection: state.selection
-    readonly property string title: state.title
     function activateWorkspace(space, extend) { DesktopState.activate(space, !!extend); }
 }
