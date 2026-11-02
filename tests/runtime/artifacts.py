@@ -23,11 +23,14 @@ with tempfile.TemporaryDirectory() as tmp:
     path=str(cfg/'artifacts-test.qml')
     backend=pathlib.Path(tmp)/'bin';backend.mkdir()
     helper=backend/'brightnessctl'
-    helper.write_text('#!/usr/bin/env python3\nimport pathlib,sys\np=pathlib.Path(__file__).with_name("level")\nv=int(p.read_text()) if p.exists() else 50\nif "set" in sys.argv:v=int(sys.argv[-1].rstrip("%"));p.write_text(str(v))\nprint(f"fixture,backlight,50,{v}%,100")\n')
+    backlights=backend/'backlights';device=backlights/'fixture';device.mkdir(parents=True)
+    (device/'actual_brightness').write_text('50')
+    (device/'max_brightness').write_text('100')
+    helper.write_text("#!/usr/bin/env python3\nimport pathlib,sys\np=pathlib.Path(__file__).parent/'backlights/fixture/actual_brightness'\nassert 'set' in sys.argv, 'brightness reads must use sysfs'\nv=int(sys.argv[-1].rstrip('%'));p.write_text(str(v))\nprint(f'fixture,backlight,{v},{v}%,100')\n")
     helper.chmod(0o755)
     log=OUT/'artifacts.log'
     with log.open('w') as output:
-        process=sp.Popen(['quickshell','-p',path],stdout=output,stderr=sp.STDOUT,env={**os.environ,'WAYLAND_DEBUG':'1','PATH':str(backend)+':'+os.environ['PATH']})
+        process=sp.Popen(['quickshell','-p',path],stdout=output,stderr=sp.STDOUT,env={**os.environ,'WAYLAND_DEBUG':'1','PATH':str(backend)+':'+os.environ['PATH'],'ILLUMINATED_FIXTURE_BACKLIGHT':str(backlights)})
         try:
             wait(lambda: 'Configuration Loaded' in log.read_text() or process.poll() is not None,'configuration load')
             assert process.poll() is None,log.read_text()
@@ -67,6 +70,13 @@ with tempfile.TemporaryDirectory() as tmp:
                     run(pointer,'1280','720','move',str(x),str(y),'down','move',str(x+35),str(y),'up')
                     wait(lambda:state()['brightness']['value']>before+.05,'deployed brightness drag through safe CLI backend')
                     run('grim',str(OUT/'v2-brightness-fill.png'))
+                    (device/'actual_brightness').write_text('25')
+                    wait(lambda:abs(state()['brightness']['value']-.25)<.001,'external sysfs brightness change')
+                    missing=backend/'missing-backlights';missing.mkdir()
+                    ipc('backlightRoot',str(missing))
+                    wait(lambda:not state()['brightness']['available'] and bool(state()['brightness']['error']),'missing backlight error')
+                    ipc('backlightRoot',str(backlights))
+                    wait(lambda:state()['brightness']['available'],'backlight discovery recovery')
                 if group=='power':
                     assert s['pages']==1
                     assert [c['kind'] for c in s['cards']]==['suspend','poweroff','reboot']

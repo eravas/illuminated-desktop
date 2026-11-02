@@ -120,6 +120,22 @@ Hyprland session, and confirm the rail/dock recover without manual shell restart
 inspect Quickshell logs for reconnect/refresh failures. Determine whether native
 Quickshell reconnect makes the retained health socket redundant before removing it.
 
+### 2.3 Brightness reads
+
+Backlight discovery runs once (and after configuration changes); the three-second
+read timer reloads `actual_brightness`/`max_brightness` through FileView without
+forking. Writes still use brightnessctl. Configured devices take precedence over
+the first discovered directory. Failed writes retain their error.
+
+The artifacts suite passes with temporary sysfs-shaped files and a write-only
+brightnessctl fixture: initial discovery, dragging, external file changes,
+missing-device errors and recovery are exercised (V, fixture). Non-strict validation
+passes with existing QML warnings; hardware permissions and actual kernel files
+remain U/L. On the Inspiron: compare `cat /sys/class/backlight/*/actual_brightness`
+with the Levels card, change brightness outside the shell, and expect the card to
+follow within three seconds. Confirm writes respect the configured device and
+report permission failures. No physical backlight is claimed here.
+
 ## Phase 0: repository (done)
 
 The tree is a Git repository. `checkpoints/` (30 MB: history bundles and the foundation

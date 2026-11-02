@@ -10,6 +10,7 @@ import "config"
 ShellRoot {
     id: root
     Component.onCompleted: {
+        if (Quickshell.env("ILLUMINATED_FIXTURE_BACKLIGHT")) BrightnessState.backlightRoot = Quickshell.env("ILLUMINATED_FIXTURE_BACKLIGHT");
         Settings.lockCommand = ["sh", "-c", "touch /project/artifacts/development/lock-substitute"];
         Settings.logoutCommand = ["sh", "-c", "touch /project/artifacts/development/logout-substitute"];
         Settings.powerCommands = ({suspend: ["sh", "-c", "test -f /project/artifacts/development/lock-substitute && touch /project/artifacts/development/suspend-substitute"], reboot: ["sh", "-c", "touch /project/artifacts/development/reboot-substitute"], poweroff: ["sh", "-c", "touch /project/artifacts/development/poweroff-substitute"]});
@@ -83,6 +84,7 @@ ShellRoot {
         }
         function session(action: string, confirmed: bool): void { SessionState.select(action); if (confirmed) SessionState.confirm(); else SessionState.cancel(); }
         function failingLock(fail: bool): void { Settings.lockCommand = fail ? ["sh", "-c", "exit 7"] : ["sh", "-c", "touch /project/artifacts/development/lock-substitute"]; }
+        function backlightRoot(path: string): void { BrightnessState.backlightRoot = path; }
         function dnd(): void { NotificationHub.dnd = !NotificationHub.dnd; }
         function dismissNotification(id: int): void { NotificationHub.dismiss(id); }
         function invoke(id: int): void { NotificationHub.invoke(id, 0); }
@@ -92,7 +94,7 @@ ShellRoot {
                 const item = deck.cardItems.itemAt(i);
                 positions.push({x: item.x, y: item.y, width: item.width, height: item.height, kind: item.card.kind, rotation: item.card.naturalRotation, flip: item.card.flipProgress, selected: item.card.selected, armed: item.card.armed, dogEar: item.card.dogEar});
             }
-            return JSON.stringify({brightness:{available:BrightnessState.available,value:BrightnessState.value},group: deck.displayGroup, requested: Navigation.group, phase: deck.phase, page: deck.page, pages: deck.layout.pages,
+            return JSON.stringify({brightness:{available:BrightnessState.available,value:BrightnessState.value,error:BrightnessState.error,device:BrightnessState.device},group: deck.displayGroup, requested: Navigation.group, phase: deck.phase, page: deck.page, pages: deck.layout.pages,
                 cards: positions, sheet: Navigation.sheet, launcher: {opened: launcher.opened, progress: launcher.progress, geometry: launcher.geometry, motionState: launcher.motionState},
                 media: {count: MediaState.players.length, title: MediaState.player ? MediaState.player.trackTitle : "", playing: MediaState.player && MediaState.player.isPlaying},
                 tray: SystemTray.items.values.length,

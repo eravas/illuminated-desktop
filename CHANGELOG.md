@@ -26,6 +26,10 @@ has been verified, and how, are in [docs/STATUS.md](docs/STATUS.md).
 - Removed the obsolete top-origin deck path. Hands always enter from the left, including with the rail disabled.
 - Removed duplicate built-in groups `light` and `session`; use `levels`/`battery` and `power`.
 
+- Dock and rail workspace delegates survive title changes; titles still update live.
+- Brightness polling reads sysfs instead of spawning brightnessctl every three seconds.
+- Hyprland reconciles on reconnect rather than on an unconditional ten-second timer.
+
 ### Removed keys
 
 `illuminated apply` rejects removed fixed keys in `config.toml`. The `groups.light`
