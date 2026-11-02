@@ -14,8 +14,8 @@ import "../materials"
 ArtifactCard {
     id: root
     required property string kind
-    // Title, orientation, interaction and sheet come from the [cards] registry in config.
-    readonly property var spec: Settings.card(kind)
+    // Labels/sheets/confirmation are configurable; kind adapters own behavior.
+    readonly property var spec: Adapters.spec(kind, Settings.card(kind))
     // The skin's art for this card (docs/SKINS.md, "cardArt"): {front, dark?, focus?}.
     readonly property var art: (SkinStore.manifest.cardArt || {})[kind] || null
     readonly property string title: spec.title || kind

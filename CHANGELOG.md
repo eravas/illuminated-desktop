@@ -30,6 +30,8 @@ has been verified, and how, are in [docs/STATUS.md](docs/STATUS.md).
 - Brightness polling reads sysfs instead of spawning brightnessctl every three seconds.
 - Hyprland reconciles on reconnect rather than on an unconditional ten-second timer.
 
+- Built-in card orientation, gestures and session-menu alternatives now live in the kind adapters. Labels, sheets and confirmation remain configurable.
+
 ### Removed keys
 
 `illuminated apply` rejects removed fixed keys in `config.toml`. The `groups.light`
@@ -37,6 +39,9 @@ and `groups.session` rows remove packaged defaults: explicitly declared user gro
 remain supported, including groups with those names.
 
 | Removed | Use instead |
+| `cards.*.orientation` | Fixed by the built-in kind; skin cards declare their own |
+| `cards.*.interaction` | Fixed by the built-in kind |
+| `cards.*.alternatives` | Sleep has Lock/Log Out in its built-in menu |
 | `groups.light` | `groups.levels` and `groups.battery` |
 | `groups.session` | `groups.power` |
 | --- | --- |

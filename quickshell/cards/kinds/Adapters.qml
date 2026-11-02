@@ -1,4 +1,5 @@
 pragma Singleton
+import "Metadata.js" as Metadata
 import QtQuick
 import Quickshell
 import Quickshell.Services.UPower
@@ -7,6 +8,7 @@ import "../../config"
 import "../../artifacts/CardModel.js" as CardModel
 // One adapter object per card. Only its kind's callbacks read service state.
 Singleton {
+    function spec(kind, configured) { return Object.assign({}, configured || {}, Metadata.spec(kind)); }
     function profileText() {
         return PowerProfiles.profile === PowerProfile.PowerSaver ? "Power saver" : PowerProfiles.profile === PowerProfile.Performance ? "Performance" : "Balanced";
     }

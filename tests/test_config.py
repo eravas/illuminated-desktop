@@ -82,13 +82,13 @@ class Validation(unittest.TestCase):
             self.assertFalse(set(palette) & set(defaults["semantic"]), "a semantic colour is mode-dependent")
         self.assertEqual(set(defaults["palettes"]["dark"]), set(defaults["palettes"]["light"]))
 
-    def test_menu_entries_cannot_nest(self):
-        self.assertError({"cards": {"poweroff": {"alternatives": ["suspend"]}}}, "cards.poweroff.alternatives", "itself a menu")
+    def test_builtin_behavior_is_not_configurable(self):
+        for key, value in (("orientation", "landscape"), ("interaction", "toggle"), ("alternatives", ["suspend"])):
+            self.assertError({"cards": {"poweroff": {key: value}}}, "cards.poweroff." + key, "unknown key")
 
     def test_default_session_deck(self):
         values = resolve({}).values
         self.assertEqual(values["groups"]["power"]["cards"], ["suspend", "poweroff", "reboot"])
-        self.assertEqual(values["cards"]["suspend"]["alternatives"], ["lock", "logout"])
         self.assertFalse(values["cards"]["suspend"]["confirm"])
         self.assertFalse(values["cards"]["lock"]["confirm"])
         for kind in ("poweroff", "reboot", "logout"):

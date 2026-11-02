@@ -2,6 +2,9 @@ const {test} = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
+const kindMetadata = {};
+vm.createContext(kindMetadata);
+vm.runInContext(fs.readFileSync('quickshell/cards/kinds/Metadata.js', 'utf8').replace(/^\.pragma.*$/m, ''), kindMetadata);
 const policy = {};
 vm.createContext(policy);
 vm.runInContext(fs.readFileSync('quickshell/artifacts/Geometry.js', 'utf8'), policy);
@@ -50,14 +53,14 @@ test('specialized landscape cards remain separated on a shared axis',()=>{
  }
 });
 test('every default deck fits on one page at 1280x720 and 1366x768',()=>{
- // Mirrors CardsLayer.qml: card orientation and deck geometry come from the packaged defaults.
+ // Mirrors CardsLayer.qml: kind metadata supplies orientation; config supplies geometry.
  const defaults=JSON.parse(fs.readFileSync('quickshell/config/defaults.json','utf8'));
  const deck=defaults.deck, bar=72;   // permanent dock reservation
  const options={cardWidth:deck.width,landscapeWidth:deck.landscapeWidth,gap:Math.max(deck.gap,deck.selectionLift+8),margin:deck.margin,rotation:4,lift:deck.selectionLift};   // reading.options.rotation "full" (the Default preset)
  const decks=Object.entries(defaults.groups).filter(([,g])=>g.cards.length);
  assert(decks.length>=5);
  for(const [w,h] of [[1280,720],[1366,768]]) for(const [name,group] of decks){
-  const items=group.cards.map(kind=>({landscape:defaults.cards[kind].orientation==='landscape'}));
+  const items=group.cards.map(kind=>({landscape:kindMetadata.spec(kind).orientation==='landscape'}));
   for(const lane of [0,h/2,h]){
    const d=policy.dealLeft(w,h,lane,items,0,72,bar,options);
    assert.equal(d.pages,1,`${name} paginates at ${w}x${h}`);
@@ -86,7 +89,7 @@ test('hands dealt from the rail: a row right of the rail, on the dealing initial
   const defaults = JSON.parse(fs.readFileSync('quickshell/config/defaults.json', 'utf8'));
   const deck = defaults.deck, opts = {cardWidth: deck.width, landscapeWidth: deck.landscapeWidth, gap: 24, margin: deck.margin, rotation: 4, lift: deck.selectionLift};
   for (const [w, h] of [[1280, 720], [1366, 768], [1920, 1080], [2560, 1440]]) for (const name of defaults.rail.hands) {
-    const items = defaults.groups[name].cards.map(k => ({landscape: defaults.cards[k].orientation === 'landscape'}));
+    const items = defaults.groups[name].cards.map(k => ({landscape: kindMetadata.spec(k).orientation === 'landscape'}));
     for (const y of [0, h / 2, h]) for (const top of [0, 72]) {
       const d = policy.dealLeft(w, h, y, items, 0, 72, top, opts);
       assert.equal(d.pages, 1, `${name} paginates at ${w}x${h}`);

@@ -1,6 +1,7 @@
 pragma ComponentBehavior: Bound
 import QtQuick
 import "../skin"
+import "../cards/kinds"
 import "../theme"
 import QtQuick.Controls
 import QtQuick.Layouts
@@ -22,14 +23,14 @@ PanelWindow {
     property int pendingPage: 0
     property int selectedIndex: 0
     onSelectedIndexChanged: if (!Navigation.sheet) Qt.callLater(function() { root.focusSelection(); })
-    // Membership, orientation and sheets come from [groups] and [cards] in config.
+    // Config supplies membership and sheets; the kind registry supplies orientation.
     readonly property var groupSpec: Settings.group(displayGroup) || ({cards: [], sheet: ""})
     readonly property var kinds: groupSpec.cards || []
     // Hands travel in from the left; keep rail and permanent dock space clear.
     readonly property int chromeLeft: Settings.enableRail ? Settings.railReserved : 0
     readonly property int chromeTop: (Settings.enableDock && Settings.dockMode(screen ? screen.name : "", height) === "permanent" ? Settings.dockReserved : 0)
     readonly property var deckOptions: ({cardWidth:Settings.cardWidth, landscapeWidth:Settings.landscapeCardWidth, gap:Math.max(Settings.cardGap, Settings.selectionLift + 8), margin:Settings.cardMargin, rotation:Math.min(7,Math.abs(Settings.cardRotation)), aligned:Settings.deckAligned, lift:Settings.selectionLift})
-    readonly property var deckItems: kinds.map(kind => ({landscape: Settings.card(kind).orientation === "landscape"}))
+    readonly property var deckItems: kinds.map(kind => ({landscape: Adapters.spec(kind, Settings.card(kind)).orientation === "landscape"}))
     readonly property var layout: Geometry.dealLeft(width, height, Navigation.lane, deckItems, page, chromeLeft, chromeTop, deckOptions)
     readonly property bool active: Navigation.group !== "" || Navigation.device !== ""
     screen: Navigation.screen || Quickshell.screens[0]

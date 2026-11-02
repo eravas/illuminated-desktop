@@ -5,6 +5,7 @@ const vm = require('node:vm');
 const m = {};
 vm.createContext(m);
 vm.runInContext(fs.readFileSync('quickshell/artifacts/CardModel.js', 'utf8'), m);
+const kinds = require('./visual/load.cjs').load('quickshell/cards/kinds/Metadata.js');
 const defaults = JSON.parse(fs.readFileSync('quickshell/config/defaults.json', 'utf8'));
 
 function colours(mode) {
@@ -124,10 +125,10 @@ test('power set: Sleep is mode-biased with its own ink; Shut Down solid red; Reb
 });
 
 test('session card modes and wording', () => {
-  assert.equal(m.sessionMode(defaults.cards.suspend), 'menu');
-  assert.equal(m.sessionMode(defaults.cards.poweroff), 'confirm');
-  assert.equal(m.sessionMode(defaults.cards.reboot), 'confirm');
-  assert.equal(m.sessionMode(defaults.cards.lock), 'act');
+  assert.equal(m.sessionMode({...defaults.cards.suspend, ...kinds.spec('suspend')}), 'menu');
+  assert.equal(m.sessionMode({...defaults.cards.poweroff, ...kinds.spec('poweroff')}), 'confirm');
+  assert.equal(m.sessionMode({...defaults.cards.reboot, ...kinds.spec('reboot')}), 'confirm');
+  assert.equal(m.sessionMode({...defaults.cards.lock, ...kinds.spec('lock')}), 'act');
   assert.equal(m.sentence('Log Out') + '?', 'Log out?');
   assert.equal(m.sentence('Shut Down'), 'Shut down');
 });

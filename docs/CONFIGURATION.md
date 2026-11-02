@@ -113,15 +113,12 @@ rail.width = 56
   or `player` (only while a media player exists). A group is reachable from
   `rail.hands`, `[binds]` and `illuminated cards <name>`.
 - **`[cards.<kind>]`** are the built-in card kinds. Their behaviour is code, so
-  you can't add kinds. You can change their `title`, `orientation`, `sheet`,
-  `interaction`, a session card's `alternatives` and `confirm`. A session card
-  with `alternatives` is a menu: a click turns it to a list of itself plus those
-  entries (Sleep → Sleep, Lock, Log Out; entries cannot be menus themselves).
-  Without them, `confirm = true` turns the card to "Confirm?" (Shut Down, Reboot)
-  and `false` acts on click. In a menu, an entry with `confirm = true` asks
-  inline ("Log out?").
-  `short` is an optional shorter label: a chin or back header uses it only
-  when the full title would not fit (Mic, Letters, Quiet, Net by default).
+  you can't add kinds. You can change `title`, `short`, `sheet` and a session card's
+  `confirm`. Built-in orientation, gestures and the Sleep menu's Lock/Log Out
+  alternatives are code, not configuration. Skin cards keep their own orientation.
+  `confirm = true` asks before acting, on the back for Shut Down/Reboot and inline
+  for a menu entry such as Log Out. `false` acts without that confirmation.
+  `short` is used only when the full title would not fit.
 - **Colours**: `[palettes.<mode>]` holds material colours, which change per mode;
   `[semantic]` holds the colours that carry meaning (volume pink, brightness
   gold, battery green, power canary, Bluetooth azure, Network copper/verdigris,

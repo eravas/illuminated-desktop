@@ -147,7 +147,7 @@ battery cards. Common flip, focus, gesture and confirmation mechanics remain in
 ServiceCard. Its source shrinks by 75 lines; the new registry/details add 94
 lines (net +19, reducing per-instance bindings rather than claiming a line win).
 
-Non-strict validation passes (153 Node / 78 Python tests, QML warnings retained).
+Non-strict validation passes (155 Node / 78 Python tests, QML warnings retained).
 Artifacts, audio and Session UI pass (V under Sway, hardware fields still U/L).
 An initial Devices pointer miss did not reproduce in an isolated real-pointer
 probe or the complete rerun; its callback also flipped correctly directly. A
@@ -162,6 +162,21 @@ baseline failures. Snapshot results are under
 `/workspace/illuminated-setup/phase2/artifacts/development/`.
 Code deltas (excluding generated defaults and prose): Phase 1.7 -44 lines;
 Phase 2 +97 lines, including expanded fixture coverage.
+
+### 3.2 Code-owned built-in behavior
+
+Removed 48 built-in orientation/interaction/alternatives configuration fields and
+both behavior enum schema rules. A pure kind metadata module supplies the same
+16 definitions; a migration comparison against the frozen Phase 2 defaults found
+all behavior values identical (U). Skin-defined orientation remains supported.
+Python rejects the removed fixed keys, including host overrides; labels, sheets,
+short labels and confirmation choices remain configurable. Removed keys and
+replacements are listed in CHANGELOG.
+
+Validation: 155 Node / 78 Python tests, non-strict QML exit 0 (U). Session UI passes
+both resolutions and the long-locker safety checks using the code-owned registry
+(V). No assertion or timeout was relaxed. Strict lint remains a separate failing
+baseline gate. Native compositor/hardware acceptance remains L.
 
 ## Phase 0: repository (done)
 
