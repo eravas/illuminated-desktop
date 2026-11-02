@@ -13,7 +13,7 @@ Singleton {
     property string storageError: ""
     property bool storageReady: false
     readonly property int unread: history.filter(row => !row.read).length
-    readonly property var popups: dnd ? [] : history.filter(row => row.active && row.deadline > now).slice(0, 3)
+    readonly property var popups: dnd ? [] : history.filter(row => row.active && row.deadline > 0).slice(0, 3)
     readonly property string stateDir: (Quickshell.env("XDG_STATE_HOME") || Quickshell.env("HOME") + "/.local/state") + "/illuminated"
     function receive(notification, quiet) {
         const previous = history.find(row => row.id === notification.id && row.active);

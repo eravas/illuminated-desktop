@@ -18,6 +18,49 @@ only; **L** needs local acceptance on the Inspiron (Hyprland).
     diagnosed; see V7.md "Still open");
   - qmllint: non-strict warnings (Quickshell type-metadata gaps).
 
+## Cloud verification of Phase 1 (2026-11-03)
+
+The pinned Arch image was built from `dev/Dockerfile`, with a setup-only copy adding
+bounded curl retries after an observed archive HTTP 502. TLS, package signatures and
+source checksums remain enabled. Quickshell 0.3.2/Qt 6.12 run under genuine headless
+Sway with software rendering. Mango 0.18.4 and the virtual-pointer helper built.
+
+Baseline outcomes before the verification fixes:
+
+| Check | Result |
+| --- | --- |
+| Host JavaScript / Python | 153 / 78 passed (U) |
+| Non-strict validation | 0, with QML warnings (U) |
+| Strict validation | 1; see `artifacts/development/strict-lint.txt` (U) |
+| foundation | 1: known launcher reopen assertion |
+| artifacts | 1: notification popup; preceding deployment, flip, pagination, keyboard, pointer and sheet assertions passed |
+| smoke, audio, compositor, greeter, session-ui | 0 (V; compositor and greeter use labelled protocol fixtures) |
+| reload | 1: notification D-Bus request exceeded 8 seconds |
+| single-config | 1: configuration IPC request exceeded 15 seconds |
+
+The standalone continuation runner's final aggregate message is not authoritative:
+individual `.exit` files above retain the failures. No timeout or assertion was relaxed.
+
+Verification fixes (153 Node and 78 Python tests pass; runtime evidence below):
+- NotificationHub's removed timer left `popups` reading the deleted `now` property.
+  Filter active notifications with a nonzero deadline instead; native notification
+  close/expiry already updates `active`, while quiet notifications retain deadline zero.
+- Rename SkinElement's `layer()` helper to `imageLayer()` to avoid Qt Quick Item's
+  built-in `layer` property. The baseline shell logged calls to a non-function. The rerun artifacts log has no such error.
+
+After the fixes, artifacts passes notification receive/replace/expire/dismiss,
+DND/history, lock-before-suspend, failed-lock refusal and confirmation expiry (V).
+It then fails the tray-menu fixture's hard-coded pointer click; its screenshot has
+not yet shown the sheet. Reload and single-config retain their IPC timeouts.
+These are outstanding baseline issues, not passing suites. Strict lint remains 1.
+Line delta for this verification task: QML +6/-6 (net zero), plus evidence/docs.
+
+Genuine compositor probes: Hyprland aborts both nested (missing Wayland protocols)
+and without a parent (no allocator). Mango's GLES renderer fails without a DRM FD.
+Use headless Sway here; actual Hyprland/Mango and hardware acceptance remain L.
+The logs are `artifacts/hyprland-{nested,headless}.log` and
+`artifacts/mango-headless.log`.
+
 ## Phase 0: repository (done)
 
 The tree is a Git repository. `checkpoints/` (30 MB: history bundles and the foundation

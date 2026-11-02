@@ -157,7 +157,7 @@ Item {
                                         (lk.markers || []).map(m => Skin.test(m.when, root.values))]);
             let done = root.finished[key];
             if (!done) {
-                const layer = (ref, rect) => root.layer(ctx, g, ref, rect);
+                const layer = (ref, rect) => root.imageLayer(ctx, g, ref, rect);
                 const px = Compose.compose({manifest: root.manifest, g: g, look: lk, state: root.values, layer: layer, frame: frame, regions: regions, inks: root.manifest.inks});
                 Compose.finish(px, g, raster.grain, {dither: root.element.dither !== false, shadow: root.element.shadow !== false});
                 done = {px: px, alpha: Compose.alpha(px, g.W, g.H)};
@@ -167,7 +167,7 @@ Item {
                 for (const r of regions) root.regionHit(ctx, g, r);
                 [].concat(root.element.hit || []).forEach(h => {
                     const m = h && h.mask ? Skin.image(root.manifest, h.mask) : null;
-                    if (m) root.hitMaps["mask:" + h.mask + ":"] = Px.hitMap(root.layer(ctx, g, m, null), g.W, g.H, 0);
+                    if (m) root.hitMaps["mask:" + h.mask + ":"] = Px.hitMap(root.imageLayer(ctx, g, m, null), g.W, g.H, 0);
                 });
             }
             root.hitMaps["alpha"] = done.alpha;
@@ -178,7 +178,7 @@ Item {
         }
     }
     // An image ref drawn into rect (element units; null = the element box), cached per size.
-    function layer(ctx, g, ref, rect) {
+    function imageLayer(ctx, g, ref, rect) {
         const key = ref.file + "|" + (ref.rect || "") + "|" + (rect || "");
         if (layers[key]) return layers[key];
         const r = rect || [0, 0, element.size[0], element.size[1]];
@@ -190,11 +190,11 @@ Item {
     function regionHit(ctx, g, r) {
         const ref = Compose.frameOf(manifest, r.look, values, r.frame);
         const src = (element.regions || []).find(x => x.id === r.id) || {};
-        hitMaps["r:" + r.id] = ref ? Px.hitMap(layer(ctx, g, ref, r.rect), g.W, g.H, Math.round((src.pad === undefined ? 4 : src.pad) * g.D)) : new Uint8Array(g.W * g.H);
+        hitMaps["r:" + r.id] = ref ? Px.hitMap(imageLayer(ctx, g, ref, r.rect), g.W, g.H, Math.round((src.pad === undefined ? 4 : src.pad) * g.D)) : new Uint8Array(g.W * g.H);
         [].concat(src.hit || []).forEach(h => {
             if (!h || !h.mask) return;
             const m = Skin.image(manifest, h.mask);
-            if (m) hitMaps["mask:" + h.mask + ":" + r.id] = Px.hitMap(layer(ctx, g, m, r.rect), g.W, g.H, 0);
+            if (m) hitMaps["mask:" + h.mask + ":" + r.id] = Px.hitMap(imageLayer(ctx, g, m, r.rect), g.W, g.H, 0);
         });
     }
     function alphaAt(kind, ux, uy, regionId) {

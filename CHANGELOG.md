@@ -13,7 +13,8 @@ has been verified, and how, are in [docs/STATUS.md](docs/STATUS.md).
   (the Herbarium "Align cards to grid" toggle now sets it); the confirmation timeout comes
   only from `reading.options.confirmTimeout`.
 - **Five reading options with no implementation removed.**
-- A 2 Hz timer in the notification hub that updated an unread property is gone.
+- The notification hub no longer polls at 2 Hz; popups follow native notification expiry.
+- Fixed skin rendering calls colliding with Qt Quick's built-in `layer` property.
 - The `Materials.js` facade moved from `quickshell/materials/` to `scripts/skin/` (tests and
   the skin build only); `CommandAction.qml` moved from `tools/` to `services/`.
 - The tree is now a Git repository; `checkpoints/` (history bundles, foundation tarball) and
