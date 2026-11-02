@@ -88,6 +88,20 @@ Observed Canvas paints were at most 529 ms, with one material decode of 761 ms.
 This does not establish that Canvas explains the 8/15-second baseline timeouts;
 blocking service startup remains to be investigated. No test deadlines were changed.
 
+## Phase 2: stable models and idle wakeups (in progress)
+
+### 2.1 Stable dock delegates
+
+- Mango uses `ScriptModel` with an identity key and looks up live entries by id.
+  The three-client fixture confirms each delegate is created once, title changes
+  appear, and no delegate is recreated (V, protocol fixture). Dispatch, reconciliation,
+  disconnect/reconnect and provider replacement also pass.
+- Hyprland supplies native toplevel QObjects to the model; presentation binds to
+  their live properties through the unchanged pure window helpers (U/L).
+- Delegate anchors tolerate a null parent during provider disconnect (V).
+- 153 Node tests pass (U). This task adds a narrow adapter-facing model API; pure
+  WindowLogic and Mango protocol logic are unchanged. Native verification remains L.
+
 ## Phase 0: repository (done)
 
 The tree is a Git repository. `checkpoints/` (30 MB: history bundles and the foundation

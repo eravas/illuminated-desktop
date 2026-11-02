@@ -30,6 +30,7 @@ PanelWindow {
     readonly property bool autoHide: mode === "autohide"
     property bool revealed: !autoHide
     readonly property bool hovered: stripHover.hovered || triggerHover.hovered
+    property alias windowItems: windowItems
     property var pending: []                    // window ids, in click order
     readonly property var windows: DesktopState.windows
     readonly property real pxmm: Geo.pxPerMm(Settings.mediaScale, screen ? screen.physicalPixelDensity : 0, screen ? screen.devicePixelRatio : 1)
@@ -87,14 +88,19 @@ PanelWindow {
                     height: list.height
                     spacing: 8
                     Repeater {
-                        model: root.windows
+                        id: windowItems
+                        model: ScriptModel {
+                            values: DesktopState.windowObjects
+                            objectProp: DesktopState.backend === "mango" ? "id" : ""
+                            comparisonMode: ObjectComparison.Identity
+                        }
                         DockEntry {
                             required property var modelData
-                            anchors.verticalCenter: parent.verticalCenter
-                            client: modelData
+                            anchors.verticalCenter: parent ? parent.verticalCenter : undefined
+                            client: DesktopState.windowData(modelData)
                             tag: hoverTag
-                            pending: root.pending.indexOf(modelData.id) >= 0
-                            onChosen: function(shift) { root.choose(modelData, shift); }
+                            pending: root.pending.indexOf(client.id) >= 0
+                            onChosen: function(shift) { root.choose(client, shift); }
                         }
                     }
                 }

@@ -21,6 +21,11 @@ Scope {
     readonly property var capabilities: ({multipleVisible: false, toggleSelection: false, urgency: true, windowState: true, focusWindow: true, moveWindow: true})
     // ── Dock (DESIGN.md §6) ──────────────────────────────────────────────
     readonly property var windows: ready ? WindowLogic.hyprlandWindows(Hyprland.toplevels.values, Hyprland.activeToplevel ? Hyprland.activeToplevel.address : "", Settings.dockMinimizeWorkspace) : []
+    // Keep native QObject identity in the dock model; presentation remains live.
+    readonly property var windowObjects: ready ? Hyprland.toplevels.values.filter(t => WindowLogic.hyprlandWindows([t], "", Settings.dockMinimizeWorkspace).length > 0) : []
+    function windowData(toplevel) {
+        return WindowLogic.hyprlandWindows([toplevel], Hyprland.activeToplevel ? Hyprland.activeToplevel.address : "", Settings.dockMinimizeWorkspace)[0] || ({});
+    }
     readonly property string currentWorkspace: ready && Hyprland.focusedMonitor && Hyprland.focusedMonitor.activeWorkspace ? String(Hyprland.focusedMonitor.activeWorkspace.name) : ""
     function send(kind, vars) {
         const request = WindowLogic.dispatchFor(kind, Hyprland.usingLua, Settings.dockDispatch, vars);

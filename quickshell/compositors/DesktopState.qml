@@ -23,6 +23,11 @@ Singleton {
     readonly property var focusedScreen: Quickshell.screens.find(s => s.name === focusedOutput) || Quickshell.screens[0] || null
     function context(name, allOutputs) { return adapter ? adapter.context(name, allOutputs) : ({ready:false, modelKind:kind, monitorName:name, monitorFocused:false, spaces:[], selection:[], title:"Waiting for a supported compositor"}); }
     readonly property var windows: adapter && adapter.windows ? adapter.windows : []
+    readonly property var windowObjects: adapter && adapter.windowObjects !== undefined ? adapter.windowObjects : windows
+    function windowById(id) { return windows.find(w => w.id === id) || ({}); }
+    function windowData(value) {
+        return adapter && adapter.windowData ? adapter.windowData(value) : windowById(value.id);
+    }
     function focusWindow(w) { if (adapter && ready && adapter.focusWindow) adapter.focusWindow(w); }
     function bringWindow(w) { if (adapter && ready && capabilities.moveWindow) adapter.bringWindow(w); }
     function minimizeActive() { if (adapter && ready && adapter.minimizeActive) adapter.minimizeActive(); }

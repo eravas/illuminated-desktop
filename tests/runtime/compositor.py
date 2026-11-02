@@ -29,6 +29,12 @@ with tempfile.TemporaryDirectory() as tmp:
    ipc('activate',2,'true');wait(lambda:state()['context']['selection']==[1,2,3],'multi-tag toggle')
    ipc('activate',1,'true');wait(lambda:state()['context']['selection']==[2,3],'remove one visible tag')
    ipc('activate',4,'false');wait(lambda:state()['context']['selection']==[4],'replace tag selection')
+   wait(lambda:len(state()['dock'])==3,'dock clients created')
+   before=state()['created']
+   assert before=={'42':1,'43':1,'44':1},before
+   control.write_text(json.dumps({'title':'Changed title','broadcast':True}))
+   wait(lambda:next(w['title'] for w in state()['dock'] if w['id']=='42')=='Changed title','live dock title')
+   assert state()['created']==before,'title churn recreated dock delegates'
    control.write_text(json.dumps({'title':'Reconciled without event','broadcast':False}))
    wait(lambda:state()['context']['title']=='Reconciled without event','full reconciliation',seconds=13)
    server.terminate();server.wait(timeout=5);wait(lambda:not state()['ready'],'disconnect invalidation');assert state()['context']['spaces']==[]
