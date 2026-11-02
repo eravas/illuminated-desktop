@@ -1,0 +1,28 @@
+{
+  "rail": {
+    "size": [
+      54,
+      57
+    ],
+    "light": "materials/loupe-rail-light.png",
+    "dark": "materials/loupe-rail-dark.png",
+    "glass": "materials/loupe-rail-glass.png",
+    "ring": {
+      "light": "materials/ring-rail-light.png",
+      "dark": "materials/ring-rail-dark.png"
+    }
+  },
+  "dock": {
+    "size": [
+      52,
+      55
+    ],
+    "light": "materials/loupe-dock-light.png",
+    "dark": "materials/loupe-dock-dark.png",
+    "glass": "materials/loupe-dock-glass.png",
+    "ring": {
+      "light": "materials/ring-dock-light.png",
+      "dark": "materials/ring-dock-dark.png"
+    }
+  }
+}

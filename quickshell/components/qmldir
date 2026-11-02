@@ -1,0 +1,6 @@
+BarText 1.0 BarText.qml
+InkLabel 1.0 InkLabel.qml
+ActionButton 1.0 ActionButton.qml
+FeatureLoader 1.0 FeatureLoader.qml
+SearchField 1.0 SearchField.qml
+LevelSlider 1.0 LevelSlider.qml

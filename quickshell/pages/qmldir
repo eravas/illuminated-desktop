@@ -1,0 +1,8 @@
+AudioPage 1.0 AudioPage.qml
+NetworkPage 1.0 NetworkPage.qml
+BluetoothPage 1.0 BluetoothPage.qml
+MediaPage 1.0 MediaPage.qml
+HistoryPage 1.0 HistoryPage.qml
+TrayPage 1.0 TrayPage.qml
+SettingsPage 1.0 SettingsPage.qml
+ClipboardPage 1.0 ClipboardPage.qml

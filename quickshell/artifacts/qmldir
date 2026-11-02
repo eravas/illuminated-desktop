@@ -1,0 +1,11 @@
+singleton Motion 1.0 Motion.qml
+singleton Navigation 1.0 Navigation.qml
+ArtifactCard 1.0 ArtifactCard.qml
+VellumSheet 1.0 VellumSheet.qml
+Paper 1.0 Paper.qml
+ServiceCard 1.0 ServiceCard.qml
+CardsLayer 1.0 CardsLayer.qml
+Osd 1.0 Osd.qml
+SplitText 1.0 SplitText.qml
+CardAction 1.0 CardAction.qml
+DogEar 1.0 DogEar.qml

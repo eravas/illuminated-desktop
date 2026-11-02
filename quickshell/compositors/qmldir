@@ -1,0 +1,4 @@
+singleton DesktopState 1.0 DesktopState.qml
+DesktopContext 1.0 DesktopContext.qml
+HyprlandAdapter 1.0 HyprlandAdapter.qml
+MangoAdapter 1.0 MangoAdapter.qml

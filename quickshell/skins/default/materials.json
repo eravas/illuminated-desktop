@@ -1,0 +1,63 @@
+{
+  "vellum": {
+    "image": "materials/vellum.png",
+    "size": [
+      1024,
+      1024
+    ]
+  },
+  "fray": {
+    "image": "materials/fray.png",
+    "size": [
+      64,
+      64
+    ]
+  },
+  "sheen": {
+    "image": "materials/sheen.png",
+    "size": [
+      256,
+      1
+    ],
+    "span": 1.2
+  },
+  "glint": {
+    "image": "materials/glint.png",
+    "size": [
+      64,
+      64
+    ]
+  },
+  "patina": {
+    "image": "materials/patina.png",
+    "size": [
+      512,
+      512
+    ]
+  },
+  "ramps": {
+    "image": "materials/ramps.png",
+    "size": [
+      4,
+      7
+    ],
+    "rows": [
+      "gold",
+      "silver",
+      "pink",
+      "green",
+      "copper",
+      "patina",
+      "brass"
+    ],
+    "lengths": [
+      4,
+      4,
+      4,
+      4,
+      4,
+      3,
+      4
+    ]
+  }
+}

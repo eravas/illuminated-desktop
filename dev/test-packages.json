@@ -1,0 +1,22 @@
+[
+  {
+    "name": "libwireplumber",
+    "filename": "libwireplumber-0.5.18-1-x86_64.pkg.tar.zst",
+    "sha256": "0475d9fb44a8b7fd34e38ef7c6ff46334163c2739ddb147e48d53f5cabc08b60"
+  },
+  {
+    "name": "pipewire",
+    "filename": "pipewire-1:1.6.10-1-x86_64.pkg.tar.zst",
+    "sha256": "4a28a0f18fa2d6b73563782988c3572bca7ffc8c56f104eeaa5339667cbcac30"
+  },
+  {
+    "name": "python-dbus-next",
+    "filename": "python-dbus-next-0.2.3-8-any.pkg.tar.zst",
+    "sha256": "4916f272d9bbc3410d57e1eef59ea9b79979fff3c90e79cc1d6aa3bd92cccf1b"
+  },
+  {
+    "name": "wireplumber",
+    "filename": "wireplumber-0.5.18-1-x86_64.pkg.tar.zst",
+    "sha256": "821be7b062cbab5455dd9b315d4823cceba27ba76120e2991e68e6583a09041b"
+  }
+]

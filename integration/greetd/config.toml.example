@@ -1,0 +1,7 @@
+# Optional example ONLY. Never installed or enabled by the rice installer.
+# Review your existing DM, PAM, seat and VT configuration before opting in.
+[terminal]
+vt = "next"
+[default_session]
+command = "/usr/lib/illuminated-greeter/start"
+user = "greeter"

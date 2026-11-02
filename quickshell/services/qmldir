@@ -1,0 +1,11 @@
+singleton Time 1.0 Time.qml
+singleton AudioState 1.0 AudioState.qml
+singleton NetworkState 1.0 NetworkState.qml
+singleton BluetoothState 1.0 BluetoothState.qml
+singleton BrightnessState 1.0 BrightnessState.qml
+singleton MediaState 1.0 MediaState.qml
+singleton SessionState 1.0 SessionState.qml
+singleton NotificationHub 1.0 NotificationHub.qml
+singleton ClipboardHistory 1.0 ClipboardHistory.qml
+singleton RemovableMedia 1.0 RemovableMedia.qml
+CommandAction 1.0 CommandAction.qml

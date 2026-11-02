@@ -1,0 +1,65 @@
+[
+  {
+    "name": "cjson",
+    "repo": "extra",
+    "filename": "cjson-1.7.19-1-x86_64.pkg.tar.zst",
+    "sha256": "a6f4cff724d7dfc0661c313680945c17c8416ef1d42c0ecd9c8be5feb7e1e90d",
+    "size": 90064
+  },
+  {
+    "name": "scenefx",
+    "repo": "extra",
+    "filename": "scenefx-0.5-1-x86_64.pkg.tar.zst",
+    "sha256": "3271aac111673e1aa5b4fdef9befd294f6024692b33d8677d9da2f083d8b4c0b",
+    "size": 225966
+  },
+  {
+    "name": "pkgconf",
+    "repo": "core",
+    "filename": "pkgconf-3.0.10-1-x86_64.pkg.tar.zst",
+    "sha256": "ebc5c0d48f84b21c5b4fe80c9ee4106ad5944a0b32dbb61a30edbd154b398e92",
+    "size": 361572
+  },
+  {
+    "name": "ninja",
+    "repo": "extra",
+    "filename": "ninja-1.13.2-3-x86_64.pkg.tar.zst",
+    "sha256": "19e12c1a169d27e427c3fa678ed3573825ac2a1043c6d47dd96e76ec3d34236c",
+    "size": 433251
+  },
+  {
+    "name": "meson",
+    "repo": "extra",
+    "filename": "meson-1.12.1-2-any.pkg.tar.zst",
+    "sha256": "d7dd6a03661d12e52b739381f5290579bcc79189316513c1000a7c6cb3f2f900",
+    "size": 17699567
+  },
+  {
+    "name": "python-tqdm",
+    "repo": "extra",
+    "filename": "python-tqdm-4.70.1-1-any.pkg.tar.zst",
+    "sha256": "92c4b146a00e268855373e9c93e974d162ae5b580d37a3a138f36ca8d8ae581b",
+    "size": 675842
+  },
+  {
+    "name": "gcc",
+    "repo": "core",
+    "filename": "gcc-16.2.1+r23+gd564253eb6c8-1-x86_64.pkg.tar.zst",
+    "sha256": "1d79371ccf3138e3c172dd83b51560687b65ab824c1ad7e9cb41b7857ed9c55f",
+    "size": 231619683
+  },
+  {
+    "name": "libmpc",
+    "repo": "core",
+    "filename": "libmpc-1.4.1-1-x86_64.pkg.tar.zst",
+    "sha256": "880bdba957ebe5136449c7b61821e92628d7bdd43f370e5a0818d229372d3851",
+    "size": 196392
+  },
+  {
+    "name": "libisl",
+    "repo": "core",
+    "filename": "libisl-0.28-1-x86_64.pkg.tar.zst",
+    "sha256": "e72fd1165d674f440ff9882b514c999423098a5852ea41fa692db65f391c98c1",
+    "size": 6191080
+  }
+]

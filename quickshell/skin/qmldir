@@ -1,0 +1,5 @@
+singleton ShellState 1.0 ShellState.qml
+singleton SkinStore 1.0 SkinStore.qml
+singleton Actions 1.0 Actions.qml
+SkinElement 1.0 SkinElement.qml
+SkinCard 1.0 SkinCard.qml

@@ -1,0 +1,8 @@
+#!/bin/sh
+# Exiting the private greeter compositor promptly after the native launch acknowledgement
+# lets greetd start the selected user session. No animation occurs after start_session.
+env -u ILLUMINATED_GREETER_TEST -u ILLUMINATED_GREETER_SESSION_DIR ILLUMINATED_GREETER=1 \
+ quickshell -p /usr/share/illuminated-greeter/greeter.qml
+result=$?
+swaymsg exit >/dev/null 2>&1
+exit "$result"

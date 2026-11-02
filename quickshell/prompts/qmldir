@@ -1,0 +1,3 @@
+singleton Prompts 1.0 Prompts.qml
+PromptRequest 1.0 PromptRequest.qml
+PromptSheet 1.0 PromptSheet.qml

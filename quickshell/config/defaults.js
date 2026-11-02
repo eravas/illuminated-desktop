@@ -1,0 +1,503 @@
+.pragma library
+// Generated from config/defaults.toml by `illuminated defaults --write-json`. Do not edit.
+var values = {
+  "compositor": "auto",
+  "features": {
+    "rail": true,
+    "dock": true,
+    "media": true,
+    "clipboard": true,
+    "wallpaper": true,
+    "launcher": true,
+    "cards": true,
+    "notifications": false,
+    "tray": true,
+    "osd": true,
+    "polkit": false,
+    "lock": false
+  },
+  "appearance": {
+    "mode": "dark",
+    "accent": "#8A9F7B",
+    "wash": "medium",
+    "colourVision": "typical"
+  },
+  "reading": {
+    "preset": "default",
+    "options": {
+      "face": "preset",
+      "numerals": "preset",
+      "typeScale": "preset",
+      "texture": "preset",
+      "wash": "preset",
+      "edge": "preset",
+      "levelMark": "preset",
+      "art": "preset",
+      "rotation": "preset",
+      "transitions": "preset",
+      "loupeMotion": "preset",
+      "focus": "preset",
+      "loupe": "preset",
+      "targets": "preset",
+      "hoverInfo": "preset",
+      "dockAutoHide": "preset",
+      "confirmTimeout": "preset",
+      "lowChargeNumeral": "preset",
+      "secondaryInk": "preset"
+    }
+  },
+  "pixel": {
+    "logical": 1
+  },
+  "typography": {
+    "family": "Alegreya Sans",
+    "size": 16,
+    "heading": 26,
+    "small": 12,
+    "display": 42,
+    "blackletter": "Pirata One",
+    "legibility": "Germania One",
+    "serif": "Alegreya"
+  },
+  "launcher": {
+    "pins": []
+  },
+  "dimensions": {
+    "controlHeight": 36,
+    "spacing": 8,
+    "inset": 12,
+    "radius": 3,
+    "sheetWidth": 680,
+    "sheetHeight": 620,
+    "launcherWidth": 820,
+    "launcherHeight": 600
+  },
+  "deck": {
+    "width": 154,
+    "landscapeWidth": 248,
+    "gap": 24,
+    "margin": 16,
+    "selectionLift": 6,
+    "dragThreshold": 8
+  },
+  "confirm": {
+    "armDelay": 400
+  },
+  "motion": {
+    "reduced": false,
+    "deploy": 290,
+    "stagger": 45,
+    "lift": 120,
+    "flip": 260,
+    "scroll": 520,
+    "vellum": 400,
+    "greeter": 700,
+    "easing": "inOutQuad"
+  },
+  "skin": {
+    "path": ""
+  },
+  "wallpaper": {
+    "path": "",
+    "focusY": 0.35
+  },
+  "rail": {
+    "hands": [
+      "levels",
+      "connections",
+      "battery",
+      "power"
+    ],
+    "inset": 3,
+    "width": 64,
+    "showDate": true
+  },
+  "dock": {
+    "mode": "auto",
+    "dwell": 300,
+    "hideDelay": 600,
+    "minimizeWorkspace": "minimized",
+    "outputs": {},
+    "dispatch": {
+      "luaFocus": "hl.dsp.focus({ window = \"address:{address}\" })",
+      "luaMove": "hl.dsp.window.move({ workspace = \"{workspace}\", window = \"address:{address}\", follow = false })",
+      "legacyFocus": "focuswindow address:{address}",
+      "legacyMove": "movetoworkspacesilent {workspace},address:{address}"
+    }
+  },
+  "media": {
+    "scale": "auto",
+    "scrollThreshold": 120,
+    "overrides": {}
+  },
+  "clock": {
+    "timeFormat": "hh:mm"
+  },
+  "groups": {
+    "levels": {
+      "glyph": "L",
+      "label": "Levels",
+      "cards": [
+        "volume",
+        "brightness"
+      ],
+      "sheet": "",
+      "show": "always"
+    },
+    "battery": {
+      "glyph": "B",
+      "label": "Battery",
+      "cards": [
+        "battery",
+        "profile"
+      ],
+      "sheet": "",
+      "show": "battery"
+    },
+    "power": {
+      "glyph": "P",
+      "label": "Power",
+      "cards": [
+        "suspend",
+        "poweroff",
+        "reboot"
+      ],
+      "sheet": "",
+      "show": "always"
+    },
+    "clipboard": {
+      "glyph": "⎘",
+      "label": "Clipboard",
+      "cards": [],
+      "sheet": "clipboard",
+      "show": "always"
+    },
+    "sound": {
+      "glyph": "♪",
+      "label": "Sound",
+      "cards": [
+        "volume",
+        "microphone",
+        "outputs"
+      ],
+      "sheet": "",
+      "show": "always"
+    },
+    "light": {
+      "glyph": "☀",
+      "label": "Light",
+      "cards": [
+        "brightness",
+        "battery"
+      ],
+      "sheet": "",
+      "show": "always"
+    },
+    "connections": {
+      "glyph": "↔",
+      "label": "Connections",
+      "cards": [
+        "wifi",
+        "bluetooth"
+      ],
+      "sheet": "",
+      "show": "always"
+    },
+    "media": {
+      "glyph": "▶",
+      "label": "Music",
+      "cards": [
+        "media"
+      ],
+      "sheet": "",
+      "show": "player"
+    },
+    "notifications": {
+      "glyph": "✉",
+      "label": "Correspondence",
+      "cards": [
+        "notifications",
+        "dnd"
+      ],
+      "sheet": "",
+      "show": "always"
+    },
+    "session": {
+      "glyph": "⏻",
+      "label": "Session",
+      "cards": [
+        "suspend",
+        "poweroff",
+        "reboot"
+      ],
+      "sheet": "",
+      "show": "always"
+    },
+    "settings": {
+      "glyph": "❧",
+      "label": "Herbarium",
+      "cards": [],
+      "sheet": "settings",
+      "show": "always"
+    },
+    "tray": {
+      "glyph": "⋯",
+      "label": "Tray",
+      "cards": [],
+      "sheet": "tray",
+      "show": "always"
+    }
+  },
+  "cards": {
+    "volume": {
+      "title": "Sound",
+      "short": "",
+      "orientation": "landscape",
+      "interaction": "level",
+      "sheet": "audio",
+      "alternatives": []
+    },
+    "microphone": {
+      "title": "Microphone",
+      "short": "Mic",
+      "orientation": "portrait",
+      "interaction": "level",
+      "sheet": "audio",
+      "alternatives": []
+    },
+    "outputs": {
+      "title": "Devices",
+      "short": "",
+      "orientation": "portrait",
+      "interaction": "flip",
+      "sheet": "audio",
+      "alternatives": []
+    },
+    "brightness": {
+      "title": "Light",
+      "short": "",
+      "orientation": "landscape",
+      "interaction": "level",
+      "sheet": "brightness",
+      "alternatives": []
+    },
+    "battery": {
+      "title": "Charge",
+      "short": "",
+      "orientation": "portrait",
+      "interaction": "flip",
+      "sheet": "settings",
+      "alternatives": []
+    },
+    "profile": {
+      "title": "Profile",
+      "short": "",
+      "orientation": "portrait",
+      "interaction": "toggle",
+      "sheet": "",
+      "alternatives": []
+    },
+    "wifi": {
+      "title": "Network",
+      "short": "Net",
+      "orientation": "portrait",
+      "interaction": "toggle",
+      "sheet": "network",
+      "alternatives": []
+    },
+    "bluetooth": {
+      "title": "Bluetooth",
+      "short": "",
+      "orientation": "portrait",
+      "interaction": "toggle",
+      "sheet": "bluetooth",
+      "alternatives": []
+    },
+    "media": {
+      "title": "Music",
+      "short": "",
+      "orientation": "portrait",
+      "interaction": "flip",
+      "sheet": "media",
+      "alternatives": []
+    },
+    "notifications": {
+      "title": "Correspondence",
+      "short": "Letters",
+      "orientation": "portrait",
+      "interaction": "flip",
+      "sheet": "history",
+      "alternatives": []
+    },
+    "dnd": {
+      "title": "Quiet hours",
+      "short": "Quiet",
+      "orientation": "portrait",
+      "interaction": "toggle",
+      "sheet": "history",
+      "alternatives": []
+    },
+    "lock": {
+      "title": "Lock",
+      "short": "",
+      "orientation": "portrait",
+      "interaction": "session",
+      "sheet": "",
+      "alternatives": [],
+      "confirm": false
+    },
+    "suspend": {
+      "title": "Sleep",
+      "short": "",
+      "orientation": "portrait",
+      "interaction": "session",
+      "sheet": "",
+      "alternatives": [
+        "lock",
+        "logout"
+      ],
+      "confirm": false
+    },
+    "poweroff": {
+      "title": "Shut Down",
+      "short": "",
+      "orientation": "portrait",
+      "interaction": "session",
+      "sheet": "",
+      "alternatives": [],
+      "confirm": true
+    },
+    "reboot": {
+      "title": "Reboot",
+      "short": "",
+      "orientation": "portrait",
+      "interaction": "session",
+      "sheet": "",
+      "alternatives": [],
+      "confirm": true
+    },
+    "logout": {
+      "title": "Log Out",
+      "short": "",
+      "orientation": "portrait",
+      "interaction": "session",
+      "sheet": "",
+      "alternatives": [],
+      "confirm": true
+    }
+  },
+  "lock": {
+    "pam": "login",
+    "timeout": 3000,
+    "fallback": [
+      "swaylock",
+      "--daemonize"
+    ]
+  },
+  "commands": {
+    "lock": [
+      "swaylock",
+      "--daemonize"
+    ],
+    "lockReturnsWhenReady": true,
+    "logout": [],
+    "suspend": [
+      "systemctl",
+      "suspend"
+    ],
+    "reboot": [
+      "systemctl",
+      "reboot"
+    ],
+    "poweroff": [
+      "systemctl",
+      "poweroff"
+    ],
+    "custom": {}
+  },
+  "binds": {
+    "SUPER+SPACE": "launcher",
+    "SUPER+A": "cards levels",
+    "SUPER+N": "history",
+    "SUPER+SHIFT+Q": "cards power",
+    "XF86AudioRaiseVolume": "volume up",
+    "XF86AudioLowerVolume": "volume down",
+    "XF86AudioMute": "volume mute",
+    "XF86AudioMicMute": "microphone",
+    "XF86MonBrightnessUp": "brightness up",
+    "XF86MonBrightnessDown": "brightness down"
+  },
+  "integration": {
+    "autostart": true,
+    "binds": true,
+    "borders": true
+  },
+  "notifications": {
+    "historyLimit": 100
+  },
+  "greeter": {
+    "authTimeout": 30000
+  },
+  "hardware": {
+    "backlightDevice": ""
+  },
+  "palettes": {
+    "dark": {
+      "paper": "#211C15",
+      "cardstock": "#2F291F",
+      "cardstockTonal": "#3A3328",
+      "sunken": "#17130D",
+      "ink": "#F3E8D5",
+      "mutedInk": "#C6BCAD",
+      "disabledInk": "#81796D",
+      "edge": "#81715D",
+      "fray": "#120F0A",
+      "mutedInkHigh": "#C6BCAD",
+      "accent": "#CBBBA5",
+      "activePaper": "#3A3328",
+      "hoverPaper": "#2A241B",
+      "urgent": "#ED4A49",
+      "focusCore": "#FA7A45",
+      "focusFringe": "#8A82E9",
+      "sleepCard": "#B0A38F",
+      "sleepInk": "#211C15",
+      "environment": "#17130D"
+    },
+    "light": {
+      "paper": "#E7D9BE",
+      "cardstock": "#E3D4BC",
+      "cardstockTonal": "#EBDFCB",
+      "sunken": "#DBCCB1",
+      "ink": "#26372C",
+      "mutedInk": "#4B5D51",
+      "disabledInk": "#848978",
+      "edge": "#A6967B",
+      "fray": "#A6967B",
+      "mutedInkHigh": "#323E36",
+      "accent": "#584332",
+      "activePaper": "#D8C9AC",
+      "hoverPaper": "#DFD0B4",
+      "urgent": "#B3302F",
+      "focusCore": "#6353C5",
+      "focusFringe": "#FA7A45",
+      "sleepCard": "#5A5144",
+      "sleepInk": "#F3E8D5",
+      "environment": "#253C2E"
+    }
+  },
+  "semantic": {
+    "onFill": "#211C15",
+    "volume": "#FA86B6",
+    "volumeMuted": "#CCA4B3",
+    "brightness": "#F5AE39",
+    "power": "#FADB2C",
+    "battery": "#56D57B",
+    "batteryTonal": "#7CE695",
+    "bluetooth": "#52B5F4",
+    "copper": "#C57951",
+    "verdigris": "#75CABB",
+    "critical": "#ED4A49",
+    "criticalTonal": "#F26A64",
+    "silver": "#B9BEC4"
+  }
+};

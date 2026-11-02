@@ -1,0 +1,5 @@
+# A private greetd display. This file is unrelated to the user's normal compositor.
+xwayland disable
+output * bg #17231c solid_color
+bindsym F12 exec swaymsg exit
+exec /usr/lib/illuminated-greeter/ui

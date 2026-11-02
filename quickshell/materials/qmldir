@@ -1,0 +1,8 @@
+RasterCanvas 1.0 RasterCanvas.qml
+Vellum 1.0 Vellum.qml
+Initial 1.0 Initial.qml
+Loupe 1.0 Loupe.qml
+MaterialFace 1.0 MaterialFace.qml
+DeviceObject 1.0 DeviceObject.qml
+FocusHalo 1.0 FocusHalo.qml
+singleton MaterialFields 1.0 MaterialFields.qml

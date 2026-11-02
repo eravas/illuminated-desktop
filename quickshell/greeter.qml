@@ -1,0 +1,2 @@
+import "greeter"
+Greeter {}

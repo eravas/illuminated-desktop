@@ -1,0 +1,611 @@
+# Illuminated Desktop — packaged defaults and reference.
+#
+# This file is the single source of every default. You never edit it:
+# put only the keys you want to change in ~/.config/illuminated/config.toml,
+# then run `illuminated apply`. Any key below can be overridden there, and
+# per-machine overrides go in [host.<hostname>] tables of that same file.
+#
+# Merge rule (everywhere): tables merge key by key; arrays and scalars replace.
+# quickshell/config/defaults.json is generated from this file — do not edit it.
+
+# auto | hyprland | mango  (auto: detected from the running session)
+compositor = "auto"
+
+[features]
+rail = true             # left rail: launcher, workspaces, card hands, tray, clock (DESIGN.md §6)
+dock = true             # top dock: every window in opening order
+media = true            # removable media on the rail (needs udisks2)
+clipboard = true        # clipboard history sheet (needs cliphist)
+wallpaper = true        # the packaged Monet (or wallpaper.path) on every output; false keeps your own tool
+launcher = true
+cards = true
+notifications = false   # true makes this shell the notification daemon
+tray = true
+osd = true
+polkit = false          # this shell as the polkit agent (prompt sheet); stop your current agent first
+lock = false            # this shell's lock screen; also set commands.lock = ["illuminated", "lock"]
+
+[appearance]
+mode = "dark"           # light | dark, or any palette you add under [palettes]
+accent = "#8A9F7B"      # accent 1 (sage): the rail and dock wash
+wash = "medium"         # strong | medium | soft; weakened automatically until ink passes 4.5:1
+colourVision = "typical"   # typical | protan | deutan | tritan (independent of the reading preset)
+
+# Reading presets set many options at once (DESIGN-SYSTEM.md §3.9). Any option set
+# here to something other than "preset" wins over the preset.
+[reading]
+preset = "default"      # default | legibility | accessibility
+
+[reading.options]
+face = "preset"             # pirata | germania | sans
+numerals = "preset"         # minuscule | capital | arabic (workspace numerals)
+typeScale = "preset"        # normal | large
+texture = "preset"          # full | reduced | off (material texture)
+wash = "preset"             # fade | off (accent wash)
+edge = "preset"             # frayed | solid (vellum edges)
+levelMark = "preset"        # dither | line | solid (level-fill boundary)
+art = "preset"              # full | muted
+rotation = "preset"         # full | reduced | off (card tilt 4° / 2°; off = no tilt, whole-pixel placement)
+transitions = "preset"      # full | crossfade
+loupeMotion = "preset"      # slide | jump
+focus = "preset"            # halo | thick | solid
+loupe = "preset"            # magnify | ring
+targets = "preset"          # standard | large (24 / 44 px)
+hoverInfo = "preset"        # hover | focus | always
+dockAutoHide = "preset"     # allowed | never
+confirmTimeout = "preset"   # normal | long (5 s / 15 s): an untouched confirmation then cancels
+lowChargeNumeral = "preset" # off | on
+secondaryInk = "preset"     # normal | high (≥ 7:1)
+
+[pixel]
+logical = 1             # size of one logical pixel for dithering, in output pixels (before scale)
+
+[typography]
+family = "Alegreya Sans"
+size = 16
+heading = 26
+small = 12
+display = 42
+blackletter = "Pirata One"       # card, rail and dock text (Default preset)
+legibility = "Germania One"      # the Legibility preset's display face
+serif = "Alegreya"               # hover tags, dates
+# Qt substitutes a default face if one is missing: `illuminated doctor` checks all four.
+
+[launcher]
+# Six pinned plates on the spread's left page, by desktop id (the .desktop file name without
+# .desktop), in order. Alt+1 … Alt+6 launch them. Fewer than six leave empty plates.
+pins = []
+
+[dimensions]
+controlHeight = 36
+spacing = 8
+inset = 12
+radius = 3
+sheetWidth = 680
+sheetHeight = 620
+launcherWidth = 820
+launcherHeight = 600
+
+[deck]                  # card deck geometry (was [cards] before v3)
+width = 154
+landscapeWidth = 248
+gap = 24
+margin = 16
+selectionLift = 6
+dragThreshold = 8
+
+[confirm]               # Shut Down, Reboot and inline confirmations (milliseconds)
+armDelay = 400          # clicks are ignored this long after the card starts to turn
+
+[motion]                # milliseconds; reduced = true disables all motion
+reduced = false
+deploy = 290
+stagger = 45
+lift = 120
+flip = 260
+scroll = 520
+vellum = 400
+greeter = 700
+easing = "inOutQuad"    # inOutQuad | outCubic | linear
+
+# Your skin (docs/SKINS.md): skin.json plus images, laid over the default skin key by key.
+# Everything visual (objects, devices, card art, materials) and every rail/dock button lives
+# there; skins are deliberately outside this file's one-config rule.
+[skin]
+path = ""               # "" = ~/.config/illuminated/skin
+
+[wallpaper]
+path = ""               # absolute path to an image; "" = the packaged Monet, Water Lily Pond (1900)
+focusY = 0.35           # vertical crop: 0 keeps the top, 1 the bottom
+
+# ── Rail and dock (DESIGN.md §6; DESIGN-SYSTEM.md §3.13) ─────────────────
+[rail]
+hands = ["levels", "connections", "battery", "power"]   # groups dealt from the rail's initials
+inset = 3               # logical px from the screen edge
+width = 64              # strip width (the dock's height matches)
+showDate = true
+
+[dock]
+mode = "auto"           # auto (auto-hide on outputs ≤ 800 px tall) | permanent | autohide
+dwell = 300             # ms in the top-right eighth before an auto-hidden dock appears
+hideDelay = 600         # ms after the pointer leaves
+minimizeWorkspace = "minimized"   # special workspace used as the minimised state (Hyprland)
+
+# Per-output mode, by output name: [dock.outputs] eDP-1 = "autohide"
+[dock.outputs]
+
+# Hyprland dispatch templates. {address} {workspace} are substituted. Lua configs (0.55+)
+# use the "lua" forms, others the "legacy" forms. Change these if your Hyprland differs.
+[dock.dispatch]
+luaFocus = 'hl.dsp.focus({ window = "address:{address}" })'
+luaMove = 'hl.dsp.window.move({ workspace = "{workspace}", window = "address:{address}", follow = false })'
+legacyFocus = "focuswindow address:{address}"
+legacyMove = "movetoworkspacesilent {workspace},address:{address}"
+
+[media]
+scale = "auto"          # auto (from the output's physical size) | 24 | 27 | 15.6 | 14q | 14f | compact
+scrollThreshold = 120   # wheel units per device step (one notch = 120)
+
+# Device art by USB ID, "vvvv:pppp" = kind; overrides the type-based choice.
+# kinds: usb sd disc drive ssd android iphone pico esp32 ereader cf ms zip floppy
+[media.overrides]
+
+[clock]                 # the rail clock and the lock screen
+timeFormat = "hh:mm"    # Qt date-time format
+
+# ── Groups ───────────────────────────────────────────────────────────────
+# The rail's hands: Levels, Connections, Battery, Power (DESIGN.md §6).
+[groups.levels]
+glyph = "L"
+label = "Levels"
+cards = ["volume", "brightness"]
+sheet = ""
+show = "always"
+
+[groups.battery]
+glyph = "B"
+label = "Battery"
+cards = ["battery", "profile"]
+sheet = ""
+show = "battery"
+
+[groups.power]
+glyph = "P"
+label = "Power"
+cards = ["suspend", "poweroff", "reboot"]
+sheet = ""
+show = "always"
+
+[groups.clipboard]
+glyph = "⎘"
+label = "Clipboard"
+cards = []
+sheet = "clipboard"
+show = "always"
+
+# A group is one deck of cards opened from the rail, a keybind or
+# `illuminated cards <group>`. You may add your own groups.
+#   glyph/label  the rail initial (for a hand with no skin element) and its tag
+#   cards        card kinds from [cards] (decks show at most 3 per page)
+#   sheet        optional: a group with no cards opens this sheet directly
+#   show         always | battery (only when a battery exists) | player (only
+#                while an MPRIS player exists)
+[groups.sound]
+glyph = "♪"
+label = "Sound"
+cards = ["volume", "microphone", "outputs"]
+sheet = ""
+show = "always"
+
+[groups.light]
+glyph = "☀"
+label = "Light"
+cards = ["brightness", "battery"]
+sheet = ""
+show = "always"
+
+[groups.connections]
+glyph = "↔"
+label = "Connections"
+cards = ["wifi", "bluetooth"]
+sheet = ""
+show = "always"
+
+[groups.media]
+glyph = "▶"
+label = "Music"
+cards = ["media"]
+sheet = ""
+show = "player"
+
+[groups.notifications]
+glyph = "✉"
+label = "Correspondence"
+cards = ["notifications", "dnd"]
+sheet = ""
+show = "always"
+
+[groups.session]
+glyph = "⏻"
+label = "Session"
+cards = ["suspend", "poweroff", "reboot"]
+sheet = ""
+show = "always"
+
+[groups.settings]
+glyph = "❧"
+label = "Herbarium"
+cards = []
+sheet = "settings"
+show = "always"
+
+[groups.tray]           # opened by tray icons
+glyph = "⋯"
+label = "Tray"
+cards = []
+sheet = "tray"
+show = "always"
+
+# ── Cards ────────────────────────────────────────────────────────────────
+# Built-in card kinds. Behaviour lives in code, so you cannot add new kinds
+# here, but you can retitle them, reorient them or change their sheet.
+#   orientation   landscape | portrait
+#   interaction   level (drag/scroll adjusts, click mutes) | toggle (click
+#                 toggles) — both turn over from the dog-ear corner
+#                 | flip (click turns the card) | session (power action)
+#   sheet         sheet opened from the card's back ("" = none)
+#   short         shorter label, used when the title would not fit beside the
+#                 value ("" = always the title)
+#   alternatives  session cards: a card with alternatives is a menu; a click
+#                 turns it to a list of itself plus these (Sleep, Lock, Log Out)
+#   confirm       session cards: true asks "Confirm?" before acting (on the back
+#                 for a card, inline for a menu entry); false acts at once
+[cards.volume]
+title = "Sound"
+short = ""
+orientation = "landscape"
+interaction = "level"
+sheet = "audio"
+alternatives = []
+
+[cards.microphone]
+title = "Microphone"
+short = "Mic"
+orientation = "portrait"
+interaction = "level"
+sheet = "audio"
+alternatives = []
+
+[cards.outputs]
+title = "Devices"
+short = ""
+orientation = "portrait"
+interaction = "flip"
+sheet = "audio"
+alternatives = []
+
+[cards.brightness]
+title = "Light"
+short = ""
+orientation = "landscape"
+interaction = "level"
+sheet = "brightness"
+alternatives = []
+
+[cards.battery]
+title = "Charge"
+short = ""
+orientation = "portrait"
+interaction = "flip"
+sheet = "settings"
+alternatives = []
+
+[cards.profile]          # power-profiles-daemon; provisional card (spec not yet written)
+title = "Profile"
+short = ""
+orientation = "portrait"
+interaction = "toggle"
+sheet = ""
+alternatives = []
+
+[cards.wifi]
+title = "Network"
+short = "Net"
+orientation = "portrait"
+interaction = "toggle"
+sheet = "network"
+alternatives = []
+
+[cards.bluetooth]
+title = "Bluetooth"
+short = ""
+orientation = "portrait"
+interaction = "toggle"
+sheet = "bluetooth"
+alternatives = []
+
+[cards.media]
+title = "Music"
+short = ""
+orientation = "portrait"
+interaction = "flip"
+sheet = "media"
+alternatives = []
+
+[cards.notifications]
+title = "Correspondence"
+short = "Letters"
+orientation = "portrait"
+interaction = "flip"
+sheet = "history"
+alternatives = []
+
+[cards.dnd]
+title = "Quiet hours"
+short = "Quiet"
+orientation = "portrait"
+interaction = "toggle"
+sheet = "history"
+alternatives = []
+
+[cards.lock]
+title = "Lock"
+short = ""
+orientation = "portrait"
+interaction = "session"
+sheet = ""
+alternatives = []
+confirm = false
+
+[cards.suspend]
+title = "Sleep"
+short = ""
+orientation = "portrait"
+interaction = "session"
+sheet = ""
+alternatives = ["lock", "logout"]
+confirm = false
+
+[cards.poweroff]
+title = "Shut Down"
+short = ""
+orientation = "portrait"
+interaction = "session"
+sheet = ""
+alternatives = []
+confirm = true
+
+[cards.reboot]
+title = "Reboot"
+short = ""
+orientation = "portrait"
+interaction = "session"
+sheet = ""
+alternatives = []
+confirm = true
+
+[cards.logout]
+title = "Log Out"
+short = ""
+orientation = "portrait"
+interaction = "session"
+sheet = ""
+alternatives = []
+confirm = true
+
+# ── Commands ─────────────────────────────────────────────────────────────
+# argv arrays, never shell strings. Sleep runs the lock command first and
+# suspends only after it exits successfully, so by default the lock command
+# must return once the screen is locked: swaylock --daemonize does. Both
+# swaylock and hyprlock use the standard ext-session-lock protocol, so either
+# works on Hyprland and Mango.
+#
+# Plain hyprlock stays running until you unlock. To use it, set
+# lockReturnsWhenReady = false: Lock then runs it with no time limit (it is
+# never killed), and Sleep refuses until you switch to a locker that returns.
+# The lock screen ([lock], features.lock): `illuminated lock` asks the shell to lock and returns
+# once the compositor confirms every output is covered. If the shell is not running, the
+# feature is off, or the lock is not confirmed within lock.timeout ms, it runs lock.fallback
+# instead, so Sleep never suspends an unlocked session.
+[lock]
+pam = "login"           # PAM service in /etc/pam.d (hyprlock's own file only includes login)
+timeout = 3000          # ms to wait for the compositor's confirmation before falling back
+fallback = ["swaylock", "--daemonize"]   # must return once locked, like commands.lock
+
+[commands]
+lock = ["swaylock", "--daemonize"]
+lockReturnsWhenReady = true
+logout = []             # [] = the compositor adapter's own exit
+suspend = ["systemctl", "suspend"]
+reboot = ["systemctl", "reboot"]
+poweroff = ["systemctl", "poweroff"]
+
+# Commands a skin button may run, as "command:<name>". The argv lives only here: a skin can
+# name a command but never supply one. Example: screenshot = ["grim", "-g", "…"]
+[commands.custom]
+
+# ── Keybinds ─────────────────────────────────────────────────────────────
+# "CHORD" = "illuminated action". Written once, emitted for Hyprland and
+# Mango by `illuminated apply`. Set a chord to "" to drop a default bind.
+[binds]
+"SUPER+SPACE" = "launcher"
+"SUPER+A" = "cards levels"
+"SUPER+N" = "history"
+"SUPER+SHIFT+Q" = "cards power"
+"XF86AudioRaiseVolume" = "volume up"
+"XF86AudioLowerVolume" = "volume down"
+"XF86AudioMute" = "volume mute"
+"XF86AudioMicMute" = "microphone"
+"XF86MonBrightnessUp" = "brightness up"
+"XF86MonBrightnessDown" = "brightness down"
+
+# ── Compositor integration ───────────────────────────────────────────────
+[integration]
+autostart = true        # start the shell with the compositor
+binds = true            # emit [binds]
+borders = true          # window border colours from the palette
+
+[notifications]
+historyLimit = 100
+
+[greeter]
+authTimeout = 30000
+
+[hardware]
+backlightDevice = ""    # "" = first backlight brightnessctl finds
+
+# ── Palettes ─────────────────────────────────────────────────────────────
+# Herbarium material colours; they change per mode. Add your own palette
+# table and select it with appearance.mode. Working values (DESIGN-SYSTEM.md §3).
+#   paper        vellum surface          cardstock / cardstockTonal  card faces
+#   sunken       search field, wells     ink / mutedInk / disabledInk
+#   edge         paper edges             accent (placeholder: iron-gall)
+#   focusCore / focusFringe  focus light, window edge outward
+#   sleepCard / sleepInk     Sleep card, biased toward the opposite mode
+#   environment  greeter backdrop only (the desktop is wallpaper)
+[palettes.dark]
+paper = "#211C15"
+cardstock = "#2F291F"
+cardstockTonal = "#3A3328"
+sunken = "#17130D"
+ink = "#F3E8D5"
+mutedInk = "#C6BCAD"
+disabledInk = "#81796D"
+edge = "#81715D"
+fray = "#120F0A"        # vellum fray: darkens into the surroundings in dark mode
+mutedInkHigh = "#C6BCAD"   # secondary ink under the "high" option (≥ 7:1)
+accent = "#CBBBA5"
+activePaper = "#3A3328"
+hoverPaper = "#2A241B"
+urgent = "#ED4A49"
+focusCore = "#FA7A45"
+focusFringe = "#8A82E9"
+sleepCard = "#B0A38F"
+sleepInk = "#211C15"
+environment = "#17130D"
+
+[palettes.light]
+paper = "#E7D9BE"
+cardstock = "#E3D4BC"
+cardstockTonal = "#EBDFCB"
+sunken = "#DBCCB1"
+ink = "#26372C"
+mutedInk = "#4B5D51"
+disabledInk = "#848978"
+edge = "#A6967B"
+fray = "#A6967B"
+mutedInkHigh = "#323E36"
+accent = "#584332"
+activePaper = "#D8C9AC"
+hoverPaper = "#DFD0B4"
+urgent = "#B3302F"
+focusCore = "#6353C5"
+focusFringe = "#FA7A45"
+sleepCard = "#5A5144"
+sleepInk = "#F3E8D5"
+environment = "#253C2E"
+
+# ── Semantic colours ─────────────────────────────────────────────────────
+# Colours that carry meaning: one bright value in every mode. Text on any of
+# them uses onFill. Gold (brightness), copper (Network) and silver (device
+# card) render as four-tone foils; the value here is the foil's base tone.
+[semantic]
+onFill = "#211C15"
+volume = "#FA86B6"
+volumeMuted = "#CCA4B3"
+brightness = "#F5AE39"      # gold foil base
+power = "#FADB2C"           # canary: charging bands, plugged-in wash
+battery = "#56D57B"
+batteryTonal = "#7CE695"
+bluetooth = "#52B5F4"
+copper = "#C57951"          # Network connected: copper foil base
+verdigris = "#75CABB"       # Network patina and connecting bands
+critical = "#ED4A49"        # Shut Down, Reboot, failed connections
+criticalTonal = "#F26A64"
+silver = "#B9BEC4"          # device card used space: silver foil base
+
+# ── Validation rules (read by `illuminated apply`, not by the shell) ─────
+# Keys are dotted paths; * matches one level.
+[schema]
+open = ["groups", "palettes", "binds", "host", "dock.outputs", "media.overrides", "commands.custom"]   # tables you may add keys to
+sheets = ["audio", "brightness", "network", "bluetooth", "media", "history", "settings", "tray", "clipboard"]
+
+# Every number has its own range. integer = true marks values the shell reads
+# as whole numbers (pixel sizes, milliseconds, counts); a fraction such as 40.5
+# is rejected instead of being silently truncated. Fractions are allowed only
+# for deck.selectionLift and deck.dragThreshold.
+[schema.rules]
+"compositor" = { enum = ["auto", "hyprland", "mango"] }
+"typography.size" = { integer = true, min = 8, max = 48 }
+"typography.small" = { integer = true, min = 8, max = 36 }
+"typography.heading" = { integer = true, min = 12, max = 72 }
+"typography.display" = { integer = true, min = 16, max = 96 }
+"dimensions.controlHeight" = { integer = true, min = 24, max = 72 }
+"dimensions.spacing" = { integer = true, min = 0, max = 48 }
+"dimensions.inset" = { integer = true, min = 0, max = 64 }
+"dimensions.radius" = { integer = true, min = 0, max = 32 }
+"dimensions.sheetWidth" = { integer = true, min = 280, max = 3840 }
+"dimensions.sheetHeight" = { integer = true, min = 240, max = 2160 }
+"dimensions.launcherWidth" = { integer = true, min = 320, max = 3840 }
+"dimensions.launcherHeight" = { integer = true, min = 240, max = 2160 }
+"deck.width" = { integer = true, min = 90, max = 320 }
+"deck.landscapeWidth" = { integer = true, min = 120, max = 420 }
+"deck.gap" = { integer = true, min = 4, max = 64 }
+"deck.margin" = { integer = true, min = 4, max = 64 }
+"deck.selectionLift" = { min = 0, max = 24 }
+"deck.dragThreshold" = { min = 1, max = 48 }
+"motion.deploy" = { integer = true, min = 0, max = 3000 }
+"motion.stagger" = { integer = true, min = 0, max = 3000 }
+"motion.lift" = { integer = true, min = 0, max = 3000 }
+"motion.flip" = { integer = true, min = 0, max = 3000 }
+"motion.scroll" = { integer = true, min = 0, max = 3000 }
+"motion.vellum" = { integer = true, min = 0, max = 3000 }
+"motion.greeter" = { integer = true, min = 0, max = 3000 }
+"motion.easing" = { enum = ["inOutQuad", "outCubic", "linear"] }
+"lock.timeout" = { integer = true, min = 500, max = 15000 }
+"lock.pam" = { pattern = "^[A-Za-z0-9._-]+$" }
+"palettes.*.*" = { pattern = "^#[0-9A-Fa-f]{6}([0-9A-Fa-f]{2})?$" }
+"semantic.*" = { pattern = "^#[0-9A-Fa-f]{6}([0-9A-Fa-f]{2})?$" }
+"appearance.mode" = { pattern = "^[A-Za-z0-9_-]+$" }
+"confirm.armDelay" = { integer = true, min = 0, max = 2000 }
+"groups.*.show" = { enum = ["always", "battery", "player"] }
+"cards.*.orientation" = { enum = ["landscape", "portrait"] }
+"cards.*.interaction" = { enum = ["level", "toggle", "flip", "session"] }
+"appearance.accent" = { pattern = "^#[0-9A-Fa-f]{6}$" }
+"appearance.wash" = { enum = ["strong", "medium", "soft"] }
+"appearance.colourVision" = { enum = ["typical", "protan", "deutan", "tritan"] }
+"reading.preset" = { enum = ["default", "legibility", "accessibility"] }
+"reading.options.face" = { enum = ["preset", "pirata", "germania", "sans"] }
+"reading.options.numerals" = { enum = ["preset", "minuscule", "capital", "arabic"] }
+"reading.options.typeScale" = { enum = ["preset", "normal", "large"] }
+"reading.options.texture" = { enum = ["preset", "full", "reduced", "off"] }
+"reading.options.wash" = { enum = ["preset", "fade", "off"] }
+"reading.options.edge" = { enum = ["preset", "frayed", "solid"] }
+"reading.options.levelMark" = { enum = ["preset", "dither", "line", "solid"] }
+"reading.options.art" = { enum = ["preset", "full", "muted"] }
+"reading.options.rotation" = { enum = ["preset", "full", "reduced", "off"] }
+"reading.options.transitions" = { enum = ["preset", "full", "crossfade"] }
+"reading.options.loupeMotion" = { enum = ["preset", "slide", "jump"] }
+"reading.options.focus" = { enum = ["preset", "halo", "thick", "solid"] }
+"reading.options.loupe" = { enum = ["preset", "magnify", "ring"] }
+"reading.options.targets" = { enum = ["preset", "standard", "large"] }
+"reading.options.hoverInfo" = { enum = ["preset", "hover", "focus", "always"] }
+"reading.options.dockAutoHide" = { enum = ["preset", "allowed", "never"] }
+"reading.options.confirmTimeout" = { enum = ["preset", "normal", "long"] }
+"reading.options.lowChargeNumeral" = { enum = ["preset", "off", "on"] }
+"reading.options.secondaryInk" = { enum = ["preset", "normal", "high"] }
+"pixel.logical" = { integer = true, min = 1, max = 4 }
+"wallpaper.focusY" = { min = 0, max = 1 }
+"wallpaper.path" = { pattern = "^(|/.*)$" }
+"rail.inset" = { integer = true, min = 0, max = 24 }
+"rail.width" = { integer = true, min = 48, max = 96 }
+"dock.mode" = { enum = ["auto", "permanent", "autohide"] }
+"dock.outputs.*" = { enum = ["auto", "permanent", "autohide"] }
+"dock.dwell" = { integer = true, min = 0, max = 3000 }
+"dock.hideDelay" = { integer = true, min = 0, max = 10000 }
+"dock.minimizeWorkspace" = { pattern = "^[A-Za-z0-9_-]+$" }
+"media.scale" = { enum = ["auto", "24", "27", "15.6", "14q", "14f", "compact"] }
+"media.scrollThreshold" = { integer = true, min = 1, max = 2000 }
+"media.overrides.*" = { enum = ["usb", "sd", "disc", "drive", "ssd", "android", "iphone", "pico", "esp32", "ereader", "cf", "ms", "zip", "floppy"] }
+"notifications.historyLimit" = { integer = true, min = 0, max = 10000 }
+"greeter.authTimeout" = { integer = true, min = 3000, max = 300000 }

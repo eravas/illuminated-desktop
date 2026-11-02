@@ -1,0 +1,7 @@
+#!/bin/sh
+# Root-owned executable and QML files are mandatory for a real login installation.
+set -eu
+: "${XDG_RUNTIME_DIR:?Configure the greeter PAM/session runtime directory first}"
+export ILLUMINATED_GREETER=1 XDG_CURRENT_DESKTOP=illuminated-greeter XDG_SESSION_TYPE=wayland
+unset ILLUMINATED_GREETER_TEST ILLUMINATED_GREETER_SESSION_DIR HYPRLAND_INSTANCE_SIGNATURE MANGO_INSTANCE_SIGNATURE
+exec sway --config /etc/illuminated-greeter/sway.conf
