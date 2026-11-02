@@ -136,6 +136,33 @@ with the Levels card, change brightness outside the shell, and expect the card t
 follow within three seconds. Confirm writes respect the configured device and
 report permission failures. No physical backlight is claimed here.
 
+## Phase 3: card plumbing (in progress)
+
+### 3.1 Per-kind service adapters
+
+ServiceCard delegates level reads/writes, activation, stepping, presentation,
+back selection and open/cleanup hooks to per-kind adapter objects. Battery-only
+UPower details and the charge-limit FileView live in a component loaded only by
+battery cards. Common flip, focus, gesture and confirmation mechanics remain in
+ServiceCard. Its source shrinks by 75 lines; the new registry/details add 94
+lines (net +19, reducing per-instance bindings rather than claiming a line win).
+
+Non-strict validation passes (153 Node / 78 Python tests, QML warnings retained).
+Artifacts, audio and Session UI pass (V under Sway, hardware fields still U/L).
+An initial Devices pointer miss did not reproduce in an isolated real-pointer
+probe or the complete rerun; its callback also flipped correctly directly. A
+separate notification failure was traced to the reusable container retaining
+DND from the persistence test. Acceptance reruns use a fresh disposable home;
+no assertion or timeout changed. The regular ephemeral Docker runner already
+provides a fresh home. Native battery/charge-limit/profile behavior remains L.
+
+Phase 2 full snapshot recheck: artifacts, smoke, audio, compositor, greeter and
+Session UI pass; foundation launcher reopen, reload and single-config retain
+baseline failures. Snapshot results are under
+`/workspace/illuminated-setup/phase2/artifacts/development/`.
+Code deltas (excluding generated defaults and prose): Phase 1.7 -44 lines;
+Phase 2 +97 lines, including expanded fixture coverage.
+
 ## Phase 0: repository (done)
 
 The tree is a Git repository. `checkpoints/` (30 MB: history bundles and the foundation
