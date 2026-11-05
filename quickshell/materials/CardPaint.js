@@ -10,7 +10,8 @@ function spec(surface, opts) {
     var o = opts || {}, s = surface || {};
     var out = {D: o.D || 1, gc: o.gc || 1, front: !!o.front, base: s.base || "#808080", edge: s.edge || s.base || "#808080",
                onFill: o.onFill || "#211C15", cut: o.cut || 0, wash: null, bands: null, chinFill: null, copper: null, interior: null, hatch: null};
-    if (s.wash && s.wash.level > 0) out.wash = {colour: s.wash.colour, foil: s.wash.foil, level: s.wash.level, axis: s.wash.axis, mark: o.mark || "dither"};
+    if (s.wash && (s.wash.level > 0 || s.wash.fill)) out.wash = {colour: s.wash.colour, foil: s.wash.foil, level: s.wash.level, axis: s.wash.axis, mark: o.mark || "dither",
+                                                     fill: !!s.wash.fill, sheenLevel: s.wash.sheenLevel};
     if (s.bands) out.bands = {colour: s.bands.colour};
     if (s.chinFill) out.chinFill = {colour: s.chinFill, bleed: !!s.chinBleed};
     if (s.patina && s.patina.stage) out.copper = {stage: s.patina.stage, rim: o.cvd === "protan" || o.cvd === "deutan"};
@@ -27,7 +28,9 @@ function spec(surface, opts) {
 
 // Paint a face into a QML (or HTML) 2D context of W × H device px.
 // numeral: null | {text, family, size (device px), ink, card, art: {x, y, w, h} device px}
-function paint(ctx, W, H, faceSpec, numeral) {
+// layer: {keep: true} returns a copy of the pixels (the dry face); {against: pixels} clears every
+// pixel equal to those (a level layer keeps only what it changes).
+function paint(ctx, W, H, faceSpec, numeral, layer) {
     if (!(W > 0 && H > 0)) return;
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.clearRect(0, 0, W, H);
@@ -50,7 +53,13 @@ function paint(ctx, W, H, faceSpec, numeral) {
     CardFace.paintCard(px, W, H, faceSpec);
     if (mask) CardFace.paintNumeralHalo(px, mask, W, H, {D: faceSpec.D, gc: faceSpec.gc, ink: numeral.ink, card: numeral.card,
         x0: numeral.art.x, y0: numeral.art.y, x1: numeral.art.x + numeral.art.w, y1: numeral.art.y + numeral.art.h});
+    var against = layer && layer.against, copy = null;
+    if (against && against.length === W * H * 4)
+        for (var i = 0; i < W * H * 4; i += 4)
+            if (px[i] === against[i] && px[i + 1] === against[i + 1] && px[i + 2] === against[i + 2] && px[i + 3] === against[i + 3]) px[i + 3] = 0;
+    if (layer && layer.keep) { copy = new Uint8ClampedArray(W * H * 4); for (var j = 0; j < W * H * 4; j++) copy[j] = px[j]; }
     ctx.putImageData(img, 0, 0, 0, 0, W, H);
+    return copy;
 }
 
 // The art panel of a W × H device-px face: its rect in device px.
