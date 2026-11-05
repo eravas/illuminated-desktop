@@ -2,6 +2,8 @@ import QtQuick
 import "../theme"
 import "../config"
 import "VellumPaint.js" as VellumPaint
+import "PaintCache.js" as PaintCache
+import "Fields.js" as Fields
 // A floating vellum strip (rail, dock, sheets): frayed edges cut through interleaved-gradient
 // noise, fibre texture at native resolution, baked drop shadow, and the accent wash fading
 // along the strip. The item is the strip; the canvas reaches `margin` beyond it for the fray
@@ -22,8 +24,14 @@ Item {
         x: -root.margin; y: -root.margin
         width: root.width + 2 * root.margin; height: root.height + 2 * root.margin
         onPainting: function(ctx, W, H) {
-            const D = raster.dpr, m = Math.round(root.margin * D), img = ctx.createImageData(W, H);
+            const D = raster.dpr, m = Math.round(root.margin * D);
             const amp = Theme.textureAmp(true), wash = Theme.wash;
+            // Everything the painters read: a repeat of the same strip is a putImageData.
+            const key = JSON.stringify(["vellum", W, H, D, raster.grain, Theme.mode, String(Theme.paper), String(Theme.fray), String(Theme.edge), amp,
+                                        root.solid, root.offX, root.offY, root.washed && wash ? [wash.tone, root.horizontal] : null, Fields.fieldsVersion()]);
+            const cached = PaintCache.get(key);
+            if (cached) { ctx.clearRect(0, 0, W, H); ctx.putImageData(cached, 0, 0, 0, 0, W, H); return; }
+            const img = ctx.createImageData(W, H);
             VellumPaint.paintVellum(img.data, W, H, {x0: m, y0: m, w: W - 2 * m, h: H - 2 * m, D: D, gc: raster.grain, mode: Theme.mode,
                 base: String(Theme.paper), fray: String(Theme.fray), edge: String(Theme.edge), amp: amp,
                 solidEdge: root.solid, offX: root.offX, offY: root.offY});
@@ -35,6 +43,7 @@ Item {
             }
             ctx.clearRect(0, 0, W, H);
             ctx.putImageData(img, 0, 0, 0, 0, W, H);
+            PaintCache.put(key, img);
         }
     }
     Connections {

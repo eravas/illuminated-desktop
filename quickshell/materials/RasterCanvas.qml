@@ -43,8 +43,7 @@ Item {
         smooth: false
         renderTarget: Canvas.Image
         renderStrategy: Canvas.Cooperative
-        onWidthChanged: requestPaint()
-        onHeightChanged: requestPaint()
+        // A size change repaints by itself (Canvas follows canvasSize); asking again painted twice.
         onImageLoaded: root.repaint()
         onPaint: {
             if (root.width <= 0 || root.height <= 0) return;

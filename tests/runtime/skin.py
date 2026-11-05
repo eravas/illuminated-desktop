@@ -96,6 +96,8 @@ try:
     wait(lambda: json.loads(ipc('state'))['cork'], 'the skin card renders its face')
     run('grim', str(OUT / 'skin-example-desk.png'))
     ipc('close')
+    wait(lambda: json.loads(ipc('state'))['phase'] < .001, 'the hand retracts (its overlay takes clicks until then)')
+    time.sleep(.3)
     q = where(ipc, 'quiet'); dnd = json.loads(ipc('state'))['dnd']
     run(POINTER, '1280', '720', 'move', str(round(q['x'])), str(round(q['y'])), 'down', 'up')
     wait(lambda: json.loads(ipc('state'))['dnd'] != dnd, 'the dock button toggles Do Not Disturb')
