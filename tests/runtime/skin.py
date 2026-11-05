@@ -113,7 +113,12 @@ try:
     for name in ('tray', 'nib', 'antenna', 'matchbox', 'paper'):
         w = where(ipc, name)
         assert w is not None and not w['mine'], f'{name} still comes from the default skin'
-    print('PASS: a one-file override replaces only that object', flush=True)
+    # An edit to the skin shows after `illuminated apply` (the shell reloads on generated/skin.stamp).
+    home = pathlib.Path(json.loads(ipc('paths'))['config'])
+    (home / 'illuminated' / 'skin' / 'Vial.qml').write_text(mine.replace('property bool mine: true', 'property bool mine: false'))
+    run('python3', str(ROOT / 'scripts/illuminated'), 'apply', env={**os.environ, 'XDG_CONFIG_HOME': str(home), 'ILLUMINATED_CONFIG': json.loads(ipc('paths'))['shell']})
+    wait(lambda: where(ipc, 'vial') and not where(ipc, 'vial')['mine'], 'apply reloads the edited skin')
+    print('PASS: a one-file override replaces only that object; an edit shows after apply', flush=True)
 finally:
     stop(process, log)
 

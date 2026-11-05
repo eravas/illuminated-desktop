@@ -2,8 +2,9 @@
 
 `illuminated apply` builds generated/skin/: a symlink to every file of the default skin, then
 your skin's files in their place (and any it adds). The shell loads Rail.qml, DockChrome.qml
-and Cards.qml from there, so `Vial.qml` in your skin replaces only the vial. Symlinks keep your
-edits live; a file you add or remove needs another apply. A skin in the pre-QML format
+and Cards.qml from there, so `Vial.qml` in your skin replaces only the vial. Each merge writes
+generated/skin.stamp; the shell reloads when it changes (Quickshell does not watch QML outside
+its own folder), so an edit to your skin shows after `illuminated apply`. A skin in the pre-QML format
 (skin.json with elements, rail.items or dock lists) is ignored as a whole, with a warning.
 """
 from __future__ import annotations
@@ -11,6 +12,7 @@ from __future__ import annotations
 import json
 import os
 import shutil
+import time
 from pathlib import Path
 
 OLD_FORMAT = "skin.json is in the old skin format (elements, rail.items, dock); it is ignored and the default skin is used. See docs/SKINS.md."
@@ -58,4 +60,6 @@ def merge(default_dir: Path, user_dir: Path | None, out_dir: Path) -> list[str]:
     shutil.rmtree(out_dir, ignore_errors=True)
     if temporary.exists():
         os.replace(temporary, out_dir)
+    stamp = out_dir.with_name(out_dir.name + ".stamp")
+    stamp.write_text(f"{time.time_ns()}\n")
     return messages

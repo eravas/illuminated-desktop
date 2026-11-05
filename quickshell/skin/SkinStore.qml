@@ -65,6 +65,15 @@ Singleton {
     property bool merged: false
     readonly property string qmlDir: merged ? mergedDir : defaultDir
     function qml(name) { return "file://" + qmlDir + name; }
+    // `illuminated apply` rewrites generated/skin.stamp after each merge: reload the shell so the
+    // skin's QML (which Quickshell does not watch outside its folder) is read again.
+    FileView {
+        path: root.mergedDir ? root.mergedDir.replace(/\/$/, "") + ".stamp" : ""
+        watchChanges: true; printErrors: false
+        property bool seen: false
+        onLoaded: seen = true
+        onFileChanged: { if (seen) Quickshell.reload(false); reload(); }
+    }
     FileView {
         path: root.mergedDir ? root.mergedDir + "Rail.qml" : ""
         watchChanges: true; printErrors: false

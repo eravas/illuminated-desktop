@@ -21,8 +21,9 @@ skin/
 **By file.** `illuminated apply` builds `~/.config/illuminated/generated/skin/`: every file of
 the default skin, with each file of yours in its place (and any you add). So a skin with only
 `Vial.qml` changes only the vial; one with `Rail.qml` rearranges the rail and still uses the
-default objects it names. The files are symlinks: edits show up live; adding or removing a
-file needs another `apply`. Until `apply` has run, the shell uses the default skin.
+default objects it names. After editing your skin, run `illuminated apply`: the shell reloads
+(Quickshell does not watch QML outside its own folder). Until `apply` has run, the shell uses
+the default skin.
 
 `skin.json` is data and merges **key by key** over the default's (`null` removes a key).
 

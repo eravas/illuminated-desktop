@@ -31,5 +31,6 @@ ShellRoot {
                                    cork: !!root.item("cork")});
         }
         function close(): void { Navigation.dismiss(); }
+        function paths(): string { return JSON.stringify({config: Quickshell.env("XDG_CONFIG_HOME"), shell: Quickshell.shellDir}); }
     }
 }
