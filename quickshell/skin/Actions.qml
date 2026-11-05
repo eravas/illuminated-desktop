@@ -83,7 +83,7 @@ Singleton {
         Navigation.open(name, screen, y); return true;
     }
     function workspace(arg, screen) {
-        const spaces = DesktopState.context(screen ? screen.name : "", false).spaces || [];
+        const spaces = DesktopState.context(screen ? screen.name : "").spaces || [];
         if (!spaces.length) return false;
         const at = spaces.findIndex(s => s.focused || s.active);
         let target = null;

@@ -21,7 +21,7 @@ Singleton {
     readonly property var logoutCommand: adapter ? adapter.logoutCommand : []
     readonly property var capabilities: adapter ? adapter.capabilities : ({multipleVisible:false, toggleSelection:false, urgency:false, windowState:false})
     readonly property var focusedScreen: Quickshell.screens.find(s => s.name === focusedOutput) || Quickshell.screens[0] || null
-    function context(name, allOutputs) { return adapter ? adapter.context(name, allOutputs) : ({ready:false, modelKind:kind, monitorName:name, monitorFocused:false, spaces:[], selection:[], title:"Waiting for a supported compositor"}); }
+    function context(name) { return adapter ? adapter.context(name) : ({ready:false, modelKind:kind, monitorName:name, monitorFocused:false, spaces:[], selection:[]}); }
     readonly property var windows: adapter && adapter.windows ? adapter.windows : []
     // Window entries are rebuilt on every compositor event; a view keyed by id (ScriptModel
     // objectProp "id") keeps its delegates and reads the live entry through windowById.

@@ -35,8 +35,9 @@ with tempfile.TemporaryDirectory() as tmp:
    control.write_text(json.dumps({'clientTitles':{'43':'Retitled second window'}}))
    wait(lambda:'Retitled second window' in json.loads(ipc('dock'))['titles'],'dock shows the new title')
    assert json.loads(ipc('dock'))['kept']==2,ipc('dock')
-   control.write_text(json.dumps({'title':'Reconciled without event','broadcast':False}))
-   wait(lambda:state()['context']['title']=='Reconciled without event','full reconciliation',seconds=13)
+   spaces=json.loads(ipc('railSpaces'));assert spaces['count']==9 and spaces['kept']==9,spaces   # the numerals too
+   control.write_text(json.dumps({'clientTitles':{'42':'Reconciled without event'},'broadcast':False}))
+   wait(lambda:'Reconciled without event' in json.loads(ipc('dock'))['titles'],'full reconciliation',seconds=13)
    server.terminate();server.wait(timeout=5);wait(lambda:not state()['ready'],'disconnect invalidation');assert state()['context']['spaces']==[]
    server=start();wait(lambda:state()['ready'],'reconnect');assert state()['context']['selection']==[1,3]
    ipc('provider','hyprland')
