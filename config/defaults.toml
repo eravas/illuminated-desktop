@@ -504,6 +504,7 @@ sheets = ["audio", "brightness", "network", "bluetooth", "media", "history", "se
 "appearance.wash" = { enum = ["strong", "medium", "soft"] }
 "appearance.colourVision" = { enum = ["typical", "protan", "deutan", "tritan"] }
 "reading.preset" = { enum = ["default", "legibility", "accessibility"] }
+# reading.options.* enums also generate quickshell/config/Reading.js OPTIONS (illuminated defaults --write-json)
 "reading.options.face" = { enum = ["preset", "pirata", "germania", "sans"] }
 "reading.options.numerals" = { enum = ["preset", "minuscule", "capital", "arabic"] }
 "reading.options.typeScale" = { enum = ["preset", "normal", "large"] }

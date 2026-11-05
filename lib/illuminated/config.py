@@ -370,6 +370,26 @@ def write_defaults_js(path: Path, value) -> None:
     os.replace(temporary, path)
 
 
+READING_BEGIN = "// <generated from config/defaults.toml schema.rules: reading.options.*>"
+READING_END = "// </generated>"
+
+
+def reading_options_block(defaults: dict | None = None) -> str:
+    """Reading.js's OPTIONS: each reading option's values, from the schema's enum rules
+    (without "preset", which only config and ui.json use). One source for both."""
+    rules = (defaults or load_defaults())["schema"]["rules"]
+    prefix = "reading.options."
+    lines = [f"    {key[len(prefix):]}: {json.dumps([v for v in rule['enum'] if v != 'preset'])}"
+             for key, rule in rules.items() if key.startswith(prefix)]
+    return READING_BEGIN + "\nvar OPTIONS = {\n" + ",\n".join(lines) + "\n};\n" + READING_END
+
+
+def write_reading_options(path: Path, defaults: dict | None = None) -> None:
+    text = path.read_text()
+    start, end = text.index(READING_BEGIN), text.index(READING_END) + len(READING_END)
+    path.write_text(text[:start] + reading_options_block(defaults) + text[end:])
+
+
 def write_json(path: Path, value) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     temporary = path.with_name(f".{path.name}.tmp")

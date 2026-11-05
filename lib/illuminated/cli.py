@@ -351,7 +351,8 @@ def main(argv=None) -> int:
     if command == "defaults":
         if args.write_json:
             config.write_json(paths.shell_defaults_json(), config.shell_defaults())
-            config.write_defaults_js(paths.shell_defaults_js(), config.shell_defaults()); return 0
+            config.write_defaults_js(paths.shell_defaults_js(), config.shell_defaults())
+            config.write_reading_options(paths.shell_dir() / "config/Reading.js"); return 0
         sys.stdout.write(paths.defaults_toml().read_text()); return 0
     if command == "doctor":
         return doctor()

@@ -349,3 +349,11 @@ class V7Options(unittest.TestCase):
                      {"deck": {"aligned": True}}, {"deck": {"rotation": 2}}, {"confirm": {"timeout": 8000}}):
             with self.assertRaises(c.ConfigError, msg=gone):
                 self.resolve(gone)
+
+
+class ReadingOptions(unittest.TestCase):
+    def test_reading_js_options_are_generated_from_the_schema(self):
+        # One source for the option values: config/defaults.toml. Regenerate with
+        # `illuminated defaults --write-json` after changing schema.rules.
+        text = (paths.shell_dir() / "config/Reading.js").read_text()
+        self.assertIn(config.reading_options_block(), text)
