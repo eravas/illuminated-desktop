@@ -57,6 +57,8 @@ Item {
     readonly property string edgeUrl: Baked.urls[edgeKey] || ""
     onEdgeKeyChanged: if (!edgeUrl && Baked.claim(edgeKey)) bakeKey = edgeKey
     Component.onCompleted: if (!edgeUrl && Baked.claim(edgeKey)) bakeKey = edgeKey
+    Connections { target: Baked; function onClaimedChanged() { if (!root.edgeUrl && !root.bakeKey && Baked.claim(root.edgeKey)) root.bakeKey = root.edgeKey; } }
+    Component.onDestruction: if (bakeKey) Baked.release(bakeKey)   // gone before it painted: let another claim it
     BorderImage {
         x: -root.margin; y: -root.margin
         width: (root.width + 2 * root.margin) * root.dpr; height: (root.height + 2 * root.margin) * root.dpr
