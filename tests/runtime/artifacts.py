@@ -23,11 +23,14 @@ with tempfile.TemporaryDirectory() as tmp:
     path=str(cfg/'artifacts-test.qml')
     backend=pathlib.Path(tmp)/'bin';backend.mkdir()
     helper=backend/'brightnessctl'
-    helper.write_text('#!/usr/bin/env python3\nimport pathlib,sys\np=pathlib.Path(__file__).with_name("level")\nv=int(p.read_text()) if p.exists() else 50\nif "set" in sys.argv:v=int(sys.argv[-1].rstrip("%"));p.write_text(str(v))\nprint(f"fixture,backlight,50,{v}%,100")\n')
+    # brightnessctl and sysfs fixtures: the helper writes the level where the shell reads it.
+    sysfs=pathlib.Path(tmp)/'backlight'/'fixture';sysfs.mkdir(parents=True)
+    (sysfs/'max_brightness').write_text('100\n');(sysfs/'actual_brightness').write_text('50\n')
+    helper.write_text('#!/usr/bin/env python3\nimport pathlib,sys\np=pathlib.Path('+repr(str(sysfs))+')/"actual_brightness"\nv=int(p.read_text())\nopen(p.parent/"calls","a").write(" ".join(sys.argv[1:])+"\\n")\nif "set" in sys.argv:v=int(sys.argv[-1].rstrip("%"));p.write_text(str(v))\nprint(f"fixture,backlight,{v},{v}%,100")\n')
     helper.chmod(0o755)
     log=OUT/'artifacts.log'
     with log.open('w') as output:
-        process=sp.Popen(['quickshell','-p',path],stdout=output,stderr=sp.STDOUT,env={**os.environ,'WAYLAND_DEBUG':'1','PATH':str(backend)+':'+os.environ['PATH']})
+        process=sp.Popen(['quickshell','-p',path],stdout=output,stderr=sp.STDOUT,env={**os.environ,'WAYLAND_DEBUG':'1','PATH':str(backend)+':'+os.environ['PATH'],'ILLUMINATED_BACKLIGHT_ROOT':str(sysfs.parent)})
         try:
             wait(lambda: 'Configuration Loaded' in log.read_text() or process.poll() is not None,'configuration load')
             assert process.poll() is None,log.read_text()
@@ -68,6 +71,11 @@ with tempfile.TemporaryDirectory() as tmp:
                     run(pointer,'1280','720','move',str(x),str(y),'down','move',str(x+35),str(y),'up')
                     wait(lambda:state()['brightness']['value']>before+.05,'deployed brightness drag through safe CLI backend')
                     run('grim',str(OUT/'v2-brightness-fill.png'))
+                    # A change made outside the shell (a key handled elsewhere) is read from sysfs.
+                    (sysfs/'actual_brightness').write_text('83\n')
+                    wait(lambda:abs(state()['brightness']['value']-.83)<.001,'external backlight change read from sysfs')
+                    reads=[c for c in (sysfs/'calls').read_text().splitlines() if 'set' not in c]
+                    assert len(reads)<=2,reads   # the first read names the device; polling is sysfs
                 if group=='power':
                     assert s['pages']==1
                     assert [c['kind'] for c in s['cards']]==['suspend','poweroff','reboot']
