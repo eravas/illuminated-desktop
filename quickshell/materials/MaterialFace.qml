@@ -75,6 +75,6 @@ Item {
             CardPaint.paint(ctx, W, H, spec, num);
         }
     }
-    Connections { target: Settings; function onReadingChanged() { root.refresh(); } function onColourVisionChanged() { root.refresh(); } }
-    Connections { target: Theme; function onModeChanged() { root.refresh(); } function onCardFamilyChanged() { root.refresh(); } }
+    Connections { target: Settings; function onReadingChanged() { root.refresh(); } }
+    Connections { target: Theme; function onModeChanged() { root.refresh(); } function onCardFamilyChanged() { root.refresh(); } function onColourVisionChanged() { root.refresh(); } }
 }
