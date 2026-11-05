@@ -10,6 +10,9 @@ Singleton {
     property bool dnd: false
     property var history: []
     property var live: ({})
+    // Popups expire against `now`, which only ticks while a popup is pending.
+    property real now: Date.now()
+    readonly property real nextDeadline: history.reduce((next, row) => row.active && row.deadline > now ? Math.min(next, row.deadline) : next, Infinity)
     property string storageError: ""
     property bool storageReady: false
     readonly property int unread: history.filter(row => !row.read).length
@@ -17,7 +20,8 @@ Singleton {
     readonly property string stateDir: (Quickshell.env("XDG_STATE_HOME") || Quickshell.env("HOME") + "/.local/state") + "/illuminated"
     function receive(notification, quiet) {
         const previous = history.find(row => row.id === notification.id && row.active);
-        const time = Date.now(), critical = notification.urgency === NotificationUrgency.Critical;
+        const time = Date.now(); now = time;
+        const critical = notification.urgency === NotificationUrgency.Critical;
         const updated = Object.assign({}, live); updated[notification.id] = notification; live = updated;
         const row = {uid: previous ? previous.uid : time + "-" + notification.id, id: notification.id, app: notification.appName.slice(0, 200), summary: notification.summary.slice(0, 1000),
             body: notification.body.slice(0, 8192), timestamp: time, active: true, read: previous ? previous.read : false,
@@ -42,6 +46,12 @@ Singleton {
         if (notification && notification.actions[index]) {
             notification.actions[index].invoke();
         }
+    }
+    Timer {
+        running: root.nextDeadline !== Infinity
+        repeat: true   // a coarse timer may fire a little early; it then runs once more
+        interval: Math.min(3600000, Math.max(50, root.nextDeadline - root.now + 10))
+        onTriggered: root.now = Date.now()
     }
     Process {
         id: directory
