@@ -209,3 +209,26 @@ with tempfile.TemporaryDirectory() as directory:
         finally:
             process.terminate()
             process.wait(timeout=5)
+
+    # The shell's own lock screen loaded (features.lock): Sleep locks in-process (ext-session-lock),
+    # and suspends only once the compositor reports the lock secure; commands.lock is not run.
+    shutil.copy(ROOT / 'tests/runtime/lock-session.qml', qml / 'lock-session-test.qml')
+    lock_path = str(qml / 'lock-session-test.qml')
+    for name in ('lock', 'suspend'):
+        marker(name).unlink(missing_ok=True)
+    with (OUT / 'lock-session.log').open('w') as lock_log:
+        locker = sp.Popen(['quickshell', '-p', lock_path], stdout=lock_log, stderr=sp.STDOUT)
+        try:
+            def lock_ipc(method):
+                return run('quickshell', 'ipc', '-p', lock_path, 'call', 'test', method)
+            wait(lambda: json.loads(lock_ipc('state'))['available'], 'the lock screen registers', limit=15)
+            lock_ipc('sleep')
+            wait(lambda: marker('suspend').exists(), 'Sleep suspends after the in-process lock', limit=15)
+            wait(lambda: not json.loads(lock_ipc('state'))['busy'], 'the suspend command finishes')
+            s = json.loads(lock_ipc('state'))
+            assert s['secure'] and not s['error'], s
+            assert not marker('lock').exists(), 'commands.lock must not run when the shell locks in-process'
+            print('PASS: with the shell lock screen, Sleep locks in-process and suspends only once the lock is secure', flush=True)
+        finally:
+            locker.terminate()
+            locker.wait(timeout=5)

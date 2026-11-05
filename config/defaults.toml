@@ -23,7 +23,7 @@ notifications = false   # true makes this shell the notification daemon
 tray = true
 osd = true
 polkit = false          # this shell as the polkit agent (prompt sheet); stop your current agent first
-lock = false            # this shell's lock screen; also set commands.lock = ["illuminated", "lock"]
+lock = false            # this shell's lock screen (Sleep and Lock use it directly); for keybinds and idle daemons set commands.lock = ["illuminated", "lock"]
 
 [appearance]
 mode = "dark"           # light | dark, or any palette you add under [palettes]

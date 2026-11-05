@@ -9,3 +9,4 @@ singleton NotificationHub 1.0 NotificationHub.qml
 singleton ClipboardHistory 1.0 ClipboardHistory.qml
 singleton RemovableMedia 1.0 RemovableMedia.qml
 CommandAction 1.0 CommandAction.qml
+singleton LockState 1.0 LockState.qml

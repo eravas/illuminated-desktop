@@ -114,6 +114,10 @@ Scope {
         busy = true; error = false; message = "";
         pam.respond(text);
     }
+    readonly property bool secure: session.secure
+    function abandon() { if (session.locked && !session.secure) { session.locked = false; return true; } return false; }
+    Component.onCompleted: LockState.screen = root
+    Component.onDestruction: if (LockState.screen === root) LockState.screen = null
     function lockNow() {
         if (session.locked) return;
         primary = DesktopState.focusedScreen;
@@ -125,6 +129,6 @@ Scope {
         function lock(): void { root.lockNow(); }
         function status(): string { return JSON.stringify({locked: session.locked, secure: session.secure, pam: pam.active}); }
         // Give up a lock the compositor never confirmed, so another locker can take the session.
-        function abandon(): bool { if (session.locked && !session.secure) { session.locked = false; return true; } return false; }
+        function abandon(): bool { return root.abandon(); }
     }
 }
