@@ -5,18 +5,24 @@ import "Colour.js" as Colour
 import "Fields.js" as Fields
 // The skin's material images (docs/SKINS.md, "materials"), installed into Fields.js as
 // fields: SkinStore sets `sources`; the first RasterCanvas that paints decodes them (in blocks
-// the size of its own canvas), installs them and bumps `version`, and every RasterCanvas
-// repaints. Until then the procedural originals stand in.
+// the size of its own canvas) and installs them. A canvas does not paint before that (ensure()
+// is false), so each paints once, with the skin's materials, instead of first with the
+// procedural originals and again when the images arrive. The originals stand in only when the
+// images fail, or when the skin has said nothing within `patience` ms.
 Singleton {
     id: root
     // name → {url, size: [w, h], span?, rows?, lengths?}
     property var sources: ({})
     property int version: 0
     property string installed: ""
+    property bool known: false            // SkinStore has registered the skin's materials
+    onSourcesChanged: known = true
+    onKnownChanged: version++              // waiting canvases paint now
     readonly property string key: JSON.stringify(sources)
+    Timer { interval: 2000; running: !root.known; onTriggered: { root.known = true; root.version++; } }
     function ensure(raster, ctx) {
         if (installed === key) return true;
-        if (raster.deviceWidth * raster.deviceHeight < 128 * 128) return false;   // leave decoding to a larger canvas
+        if (!known) return false;                       // painted when version changes
         const names = Object.keys(sources).filter(n => sources[n] && sources[n].url && sources[n].size);
         const urls = names.map(n => sources[n].url);
         const got = urls.length ? raster.withImages(urls, () => {

@@ -50,7 +50,8 @@ Item {
             if (root.width <= 0 || root.height <= 0) return;
             const t0 = Profile.enabled ? Date.now() : 0;
             const ctx = getContext("2d");
-            MaterialFields.ensure(root, ctx);     // the skin's material images, once per skin
+            if (!MaterialFields.ensure(root, ctx)) return;   // the skin's materials first; repainted on version
+            root.paintedWith = MaterialFields.installed;
             const t1 = Profile.enabled ? Date.now() : 0;
             root.painting(ctx, width, height);
             if (Profile.enabled) Profile.paint(root.kind, width, height, t1 - t0, Date.now() - t1);
@@ -58,6 +59,9 @@ Item {
     }
     Component.onCompleted: if (Profile.enabled) Profile.alive++
     Component.onDestruction: if (Profile.enabled) Profile.alive--
-    Connections { target: MaterialFields; function onVersionChanged() { canvas.requestPaint(); } }
+    // Repaint when the materials change, not when another canvas merely finished installing
+    // the ones this canvas already painted with.
+    property string paintedWith: "-"
+    Connections { target: MaterialFields; function onVersionChanged() { if (root.paintedWith !== MaterialFields.installed) canvas.requestPaint(); } }
     Timer { id: throttle; interval: root.coalesce; onTriggered: canvas.requestPaint() }
 }

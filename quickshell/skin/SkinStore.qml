@@ -10,8 +10,9 @@ import "../materials/DeviceArt.js" as DeviceArt
 import "../materials"
 // The skin in force (docs/SKINS.md): the default skin shipped with the shell, with yours from
 // Settings.skinDir laid over it key by key. Files are made absolute against the skin they came
-// from before merging. Watches both skin.json files; `version` changes on every reload and is
-// part of every image URL, so replaced images are picked up when you re-save skin.json.
+// from before merging. Watches both skin.json files; `version` changes when one is re-saved and
+// is part of every image URL, so replaced images are picked up. The first loads do not change
+// it: image URLs, and so the decoded material fields, stay the same through startup.
 Singleton {
     id: root
     readonly property string defaultDir: String(Qt.resolvedUrl("../skins/default/")).replace(/^file:\/\//, "")
@@ -22,7 +23,7 @@ Singleton {
     property string userError: ""
     readonly property var manifest: Skin.merge(Skin.absolutise(base, "file://" + defaultDir), Skin.absolutise(user, "file://" + userDir))
     readonly property var errors: Skin.check(manifest).concat(userError ? [userError] : [])
-    onManifestChanged: { Registry.set(manifest); version++; registerDevices(); registerMaterials(); if (errors.length) console.warn("illuminated skin:", errors.join("; ")); }
+    onManifestChanged: { Registry.set(manifest); registerDevices(); registerMaterials(); if (errors.length) console.warn("illuminated skin:", errors.join("; ")); }
     // Removable media (docs/SKINS.md, "devices"): images for every kind, and geometry for kinds a
     // skin adds (size + like). The seal and its cracked state are under media.
     function registerDevices() {
@@ -50,19 +51,19 @@ Singleton {
             if (isUser) { user = v; userError = ""; } else base = v;
         } catch (e) {
             if (isUser) { user = {}; userError = userDir + "skin.json: " + e.message; }
-            else console.warn("illuminated: the default skin does not parse:", e.message);
+            else { console.warn("illuminated: the default skin does not parse:", e.message); registerMaterials(); }
         }
     }
     FileView {
         path: root.defaultDir + "skin.json"
         watchChanges: true; printErrors: true
-        onFileChanged: reload()
+        onFileChanged: { root.version++; reload(); }
         onLoaded: root.parse(text(), false)
     }
     FileView {
         path: root.userDir ? root.userDir + "skin.json" : ""
         watchChanges: true; printErrors: false
-        onFileChanged: reload()
+        onFileChanged: { root.version++; reload(); }
         onLoaded: root.parse(text(), true)
         onLoadFailed: function(error) { root.user = {}; root.userError = error === FileViewError.FileNotFound ? "" : root.userDir + "skin.json: " + FileViewError.toString(error); }
     }
