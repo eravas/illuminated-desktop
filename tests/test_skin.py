@@ -40,6 +40,16 @@ class Merge(unittest.TestCase):
         (self.user / "skin.json").write_text(json.dumps({"devices": {}}))
         self.assertEqual(skin.merge(self.default, self.user, self.out), [])
 
+    def test_stamp_changes_only_with_the_qml(self):
+        stamp = self.out.with_name("skin.stamp")
+        skin.merge(self.default, self.user, self.out)
+        first = stamp.read_text()
+        skin.merge(self.default, self.user, self.out)
+        self.assertEqual(stamp.read_text(), first, "a config-only apply must not reload the shell")
+        (self.user / "Vial.qml").write_text("edited")
+        skin.merge(self.default, self.user, self.out)
+        self.assertNotEqual(stamp.read_text(), first)
+
     def test_no_user_skin(self):
         self.assertEqual(skin.merge(self.default, self.tmp / "missing", self.out), [])
         self.assertEqual((self.out / "Rail.qml").read_text(), "default Rail.qml")

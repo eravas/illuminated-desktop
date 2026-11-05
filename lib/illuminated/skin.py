@@ -2,8 +2,8 @@
 
 `illuminated apply` builds generated/skin/: a symlink to every file of the default skin, then
 your skin's files in their place (and any it adds). The shell loads Rail.qml, DockChrome.qml
-and Cards.qml from there, so `Vial.qml` in your skin replaces only the vial. Each merge writes
-generated/skin.stamp; the shell reloads when it changes (Quickshell does not watch QML outside
+and Cards.qml from there, so `Vial.qml` in your skin replaces only the vial. A merge that changes the
+skin's QML rewrites generated/skin.stamp; the shell reloads when it changes (Quickshell does not watch QML outside
 its own folder), so an edit to your skin shows after `illuminated apply`. A skin in the pre-QML format
 (skin.json with elements, rail.items or dock lists) is ignored as a whole, with a warning.
 """
@@ -11,8 +11,8 @@ from __future__ import annotations
 
 import json
 import os
+import hashlib
 import shutil
-import time
 from pathlib import Path
 
 OLD_FORMAT = "skin.json is in the old skin format (elements, rail.items, dock); it is ignored and the default skin is used. See docs/SKINS.md."
@@ -60,6 +60,13 @@ def merge(default_dir: Path, user_dir: Path | None, out_dir: Path) -> list[str]:
     shutil.rmtree(out_dir, ignore_errors=True)
     if temporary.exists():
         os.replace(temporary, out_dir)
+    # The stamp changes only when the skin's QML does (a config-only apply must not reload).
+    digest = hashlib.sha256()
+    for rel, source in sorted(layers.items()):
+        if rel.endswith(".qml"):
+            digest.update(rel.encode() + b"\0" + source.read_bytes() + b"\0")
     stamp = out_dir.with_name(out_dir.name + ".stamp")
-    stamp.write_text(f"{time.time_ns()}\n")
+    text = digest.hexdigest() + "\n"
+    if not stamp.exists() or stamp.read_text() != text:
+        stamp.write_text(text)
     return messages
