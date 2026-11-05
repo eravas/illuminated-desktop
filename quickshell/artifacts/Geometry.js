@@ -4,41 +4,6 @@ function bounds(width, angle, ratio) {
     const a = Math.abs(angle) * Math.PI / 180, height = width / (ratio || 5 / 7);
     return {width: width * Math.cos(a) + height * Math.sin(a), height: height * Math.cos(a) + width * Math.sin(a)};
 }
-function deck(screenWidth, screenHeight, triggerX, items, page, top, options) {
-    const cfg = options || {}, margin = cfg.margin || 16, gap = cfg.gap || 24, lift = cfg.lift || 6;
-    // Grid-aligned mode: no tilt, and positions snapped to whole pixels.
-    const aligned = !!cfg.aligned, angle = aligned ? 0 : cfg.rotation === undefined ? 2 : cfg.rotation;
-    const snap = v => aligned ? Math.round(v) : v;
-    const kinds = Array.isArray(items) ? items : Array.from({length:items}, () => "standard");
-    const dimensions = kinds.map(kind => {
-        // Items are {landscape: bool} from the card registry (Settings.card(kind).orientation).
-        const landscape = !!(kind && kind.landscape);
-        return {ratio: landscape ? 7 / 5 : 5 / 7, preferred: landscape ? (cfg.landscapeWidth || 248) : (cfg.cardWidth || 154)};
-    });
-    let available = Math.max(1, screenHeight - top - margin * 2);
-    const minHeight = dimensions.reduce((max, d) => Math.max(max, bounds(d.preferred * .65, angle, d.ratio).height), 1);
-    let capacity = Math.max(1, Math.min(3, Math.floor((available + gap) / (minHeight + gap))));
-    if (kinds.length > capacity) { available = Math.max(1, available - 44); capacity = Math.max(1, Math.min(3, Math.floor((available + gap) / (minHeight + gap)))); }
-    const pages = Math.max(1, Math.ceil(kinds.length / capacity)), current = clamp(page, 0, pages - 1);
-    const group = dimensions.slice(current * capacity, (current + 1) * capacity);
-    const full = group.map(d => bounds(d.preferred, angle, d.ratio));
-    const total = full.reduce((sum, b) => sum + b.height, 0);
-    const maximumWidth = full.reduce((max, b) => Math.max(max, b.width), 1);
-    const scale = Math.max(.01, Math.min(1, (screenWidth - 2 * margin) / maximumWidth,
-        (available - Math.max(0, group.length - 1) * gap - lift) / Math.max(1, total)));
-    const boxes = full.map(b => ({width:b.width * scale, height:b.height * scale}));
-    const maxWidth = boxes.reduce((max,b) => Math.max(max,b.width),1), maxHeight = boxes.reduce((max,b) => Math.max(max,b.height),1);
-    const lane = clamp(triggerX, margin + maxWidth / 2, screenWidth - margin - maxWidth / 2);
-    const cards = [];
-    let cursor = top + margin + lift;
-    for (let i = group.length - 1; i >= 0; --i) {
-        const width = group[i].preferred * scale, height = width / group[i].ratio;
-        cards.unshift({index:current * capacity + i, x:snap(lane-width/2), y:snap(cursor+(boxes[i].height-height)/2),
-            width:width,height:height,ratio:group[i].ratio,angle:aligned ? 0 : i%2 ? -angle : angle,offscreenY:-maxHeight-height/2});
-        cursor += boxes[i].height + gap;
-    }
-    return {cards:cards,pages:pages,page:current,lane:lane,capacity:capacity};
-}
 // The launcher spread (DESIGN.md §8): one vellum sheet centred in the space right of the rail
 // and under a permanent dock, unfurling flat from its left edge. progress 0..1 (no curl, no
 // second centring phase). left/top: space held by the rail and dock.

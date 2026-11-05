@@ -128,7 +128,7 @@ PanelWindow {
                     id: el
                     elementId: cell.elementId
                     pxmm: chromeRow.pxmm; tag: chromeRow.tag
-                    context: ({screen: chromeRow.screen, from: "top"})
+                    context: ({screen: chromeRow.screen})
                     x: (cell.width - width) / 2
                     y: cell.height / 2 - anchorY
                 }

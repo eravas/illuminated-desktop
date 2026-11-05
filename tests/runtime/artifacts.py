@@ -40,7 +40,9 @@ with tempfile.TemporaryDirectory() as tmp:
                 s=state()
                 if group=='session':run('grim',str(OUT/'v2-power-front.png'))
                 if group=="sound":run("grim",str(OUT/"cards-deployed.png"))
-                assert all(abs(c['x']+c['width']/2-240)<1 for c in s['cards'])
+                # One row on the hand's lane, left to right, clear of the rail.
+                assert all(abs(c['y']+c['height']/2-s['lane'])<1 for c in s['cards']),s['cards']
+                xs=[c['x'] for c in s['cards']];assert xs==sorted(xs) and all(x>=s['chromeLeft'] for x in xs),s['cards']
                 # Light has no back, so its flip test uses Charge; Session uses Shut Down.
                 idx=1 if group in ('session','light') else 0
                 if s['cards']:
@@ -118,10 +120,15 @@ with tempfile.TemporaryDirectory() as tmp:
                 ipc('group',name,240);time.sleep(.05)
             wait(lambda: state()['group']=='sound' and settled(),'interrupted group')
             run('swaymsg','output HEADLESS-1 mode 320x240')
-            wait(lambda:len(state()['cards'])==1,'responsive single-card page')
-            s=state();assert s['pages']==3
-            card=s['cards'][0];assert card['x']>=0 and card['x']+card['width']<=320 and card['y']+card['height']<200
-            run('grim',str(OUT/'cards-narrow.png'))
+            wait(lambda:state()['pages']>1 and settled(),'responsive pagination')
+            seen=[]
+            for page in range(state()['pages']):
+                if page:ipc('page',1);wait(lambda:state()['page']==page and settled(),'narrow page '+str(page))
+                for card in state()['cards']:
+                    assert card['x']>=0 and card['x']+card['width']<=320 and card['y']+card['height']<200,card
+                    seen.append(card['kind'])
+                if not page:run('grim',str(OUT/'cards-narrow.png'))
+            assert seen==['volume','microphone','outputs'],seen
             run('swaymsg','output HEADLESS-1 mode 1280x720')
             wait(lambda:len(state()['cards'])==3,'responsive restore')
             print('PASS: actual virtual-output resize to 320x240 paginates without inaccessible cards',flush=True)
@@ -204,10 +211,13 @@ with tempfile.TemporaryDirectory() as tmp:
                     ipc('media');wait(lambda:peerState().get('playing',False) and state()['media']['playing'],'MPRIS PlayPause')
                     ipc('next');wait(lambda:peerState().get('next',0)==1,'MPRIS Next')
                     ipc('trayActivate');wait(lambda:peerState().get('activate',0)==1,'SNI activation')
-                    ipc('trayMenu');time.sleep(.6)
+                    ipc('trayMenu')
+                    wait(lambda:(b:=json.loads(ipc('sheetBox'))) and b['progress']>=1,'tray sheet open');time.sleep(.3)
                     run('grim',str(OUT/'tray-menu.png'))
-                    # Sheet anchored at x=260, y=50; its first menu action is below heading/back.
-                    run(pointer,'1280','720','move','500','175','down','up')
+                    # The tray sheet sits beside the rail at the hand's lane; its first menu
+                    # action ("Fixture action") is the row under the heading and back button.
+                    box=json.loads(ipc('sheetBox'))
+                    run(pointer,'1280','720','move',str(round(box['x']+240)),str(round(box['y']+155)),'down','up')
                     wait(lambda:peerState().get('menu',0)==1,'DBusMenu action through vellum sheet')
                     ipc('invoke',peerState()['notification']);wait(lambda:peerState().get('action',0)==1,'actual Notification ActionInvoked delivery')
                     print('PASS: native MPRIS, SNI/DBusMenu and notification action transport against explicit application fixtures',flush=True)
