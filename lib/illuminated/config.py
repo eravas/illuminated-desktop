@@ -213,7 +213,6 @@ def _template_for_new(table, key, defaults):
 def _semantic(values, schema, out):
     cards, groups = values["cards"], values["groups"]
     sheets = set(schema["sheets"])
-    session_kinds = {k for k, c in cards.items() if c["interaction"] == "session"}
     mode = values["appearance"]["mode"]
     if mode not in values["palettes"]:
         out.append(Diagnostic("error", "appearance.mode",
@@ -221,14 +220,6 @@ def _semantic(values, schema, out):
     for name, card in cards.items():
         if card["sheet"] and card["sheet"] not in sheets:
             out.append(Diagnostic("error", f"cards.{name}.sheet", f"unknown sheet {card['sheet']!r}"))
-        if card["alternatives"] and card["interaction"] != "session":
-            out.append(Diagnostic("error", f"cards.{name}.alternatives", "only session cards take alternatives"))
-        for alt in card["alternatives"]:
-            if alt not in session_kinds or alt == name:
-                out.append(Diagnostic("error", f"cards.{name}.alternatives", f"{alt!r} is not another session card"))
-            elif cards[alt]["alternatives"]:
-                out.append(Diagnostic("error", f"cards.{name}.alternatives",
-                                      f"{alt!r} is itself a menu; menu entries cannot open further menus"))
     for name, group in groups.items():
         key = f"groups.{name}"
         if not re.fullmatch(r"[A-Za-z0-9_-]+", name):

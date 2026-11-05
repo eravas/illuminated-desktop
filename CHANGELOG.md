@@ -22,6 +22,9 @@ has been verified, and how, are in [docs/STATUS.md](docs/STATUS.md).
   `power`. `illuminated cards session` becomes `illuminated cards power`. A partial override
   such as `[groups.session] cards = …` now defines an incomplete group: rename it to
   `[groups.power]`, or give it `glyph` and `label`.
+- **Card behaviour is no longer configuration.** `[cards.*]` keeps `title`, `short`,
+  `sheet` and `confirm`; orientation, click/drag behaviour and Sleep's menu come from the
+  card kind. (Setting `cards.volume.interaction = "toggle"` used to turn clicks into flips.)
 - Skin elements painted nothing under Qt 6.12 (`SkinElement.layer()` was shadowed by
   `Item.layer`); fixed.
 - The `Materials.js` facade moved from `quickshell/materials/` to `scripts/skin/` (tests and
@@ -45,6 +48,7 @@ has been verified, and how, are in [docs/STATUS.md](docs/STATUS.md).
 | `deck.rotation`, `deck.aligned` | `reading.options.rotation` (`full` 4°, `reduced` 2°, `off` aligned) |
 | `confirm.timeout` | `reading.options.confirmTimeout` (`normal` 5 s, `long` 15 s) |
 | `reading.options.disabled`, `focusRing`, `overflow`, `stateText`, `stickySelect` | — |
+| `cards.<kind>.orientation`, `.interaction`, `.alternatives` (behaviour is code: `quickshell/artifacts/kinds/`) | — |
 | `groups.light`, `groups.session` (no longer shipped; your own definitions still work) | `groups.levels`, `groups.battery`, `groups.power` |
 
 `ui.json` entries for removed keys are ignored, not rejected.

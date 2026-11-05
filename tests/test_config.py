@@ -82,13 +82,14 @@ class Validation(unittest.TestCase):
             self.assertFalse(set(palette) & set(defaults["semantic"]), "a semantic colour is mode-dependent")
         self.assertEqual(set(defaults["palettes"]["dark"]), set(defaults["palettes"]["light"]))
 
-    def test_menu_entries_cannot_nest(self):
-        self.assertError({"cards": {"poweroff": {"alternatives": ["suspend"]}}}, "cards.poweroff.alternatives", "itself a menu")
+    def test_card_behaviour_is_not_configuration(self):
+        # Orientation, interaction and Sleep's menu live in quickshell/artifacts/kinds/.
+        for key in ("orientation", "interaction", "alternatives"):
+            self.assertError({"cards": {"volume": {key: "toggle"}}}, f"cards.volume.{key}", "unknown key")
 
     def test_default_session_deck(self):
         values = resolve({}).values
         self.assertEqual(values["groups"]["power"]["cards"], ["suspend", "poweroff", "reboot"])
-        self.assertEqual(values["cards"]["suspend"]["alternatives"], ["lock", "logout"])
         self.assertFalse(values["cards"]["suspend"]["confirm"])
         self.assertFalse(values["cards"]["lock"]["confirm"])
         for kind in ("poweroff", "reboot", "logout"):
@@ -142,7 +143,6 @@ class Validation(unittest.TestCase):
         self.assertError({"binds": {"SUPER+X": "cards nowhere"}}, "binds.SUPER+X", "unknown group")
         self.assertError({"binds": {"HYPER+X": "launcher"}}, "binds.HYPER+X", "unknown modifier")
         self.assertError({"binds": {"SUPER+X": "rm -rf /"}}, "binds.SUPER+X", "unknown action")
-        self.assertError({"cards": {"poweroff": {"alternatives": ["volume"]}}}, "cards.poweroff.alternatives")
         self.assertError({"groups": {"empty": {"cards": []}}}, "groups.empty", "needs cards or a sheet")
 
     def test_host_errors_are_found_on_every_machine(self):

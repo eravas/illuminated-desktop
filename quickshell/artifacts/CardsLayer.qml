@@ -12,6 +12,7 @@ import "../config"
 import "../services"
 import "../pages"
 import "CardKinds.js" as CardKinds
+import "kinds/Kinds.js" as Kinds
 PanelWindow {
     id: root
     property alias cardItems: cards
@@ -30,7 +31,7 @@ PanelWindow {
     readonly property int chromeLeft: Settings.enableRail ? Settings.railReserved : 0
     readonly property int chromeTop: Settings.enableDock && Settings.dockMode(screen ? screen.name : "", height) === "permanent" ? Settings.dockReserved : 0
     readonly property var deckOptions: ({cardWidth:Settings.cardWidth, landscapeWidth:Settings.landscapeCardWidth, gap:Math.max(Settings.cardGap, Settings.selectionLift + 8), margin:Settings.cardMargin, rotation:Math.min(7,Math.abs(Settings.cardRotation)), aligned:Settings.deckAligned, lift:Settings.selectionLift})
-    readonly property var deckItems: kinds.map(kind => ({landscape: Settings.card(kind).orientation === "landscape"}))
+    readonly property var deckItems: kinds.map(kind => ({landscape: Kinds.landscape(kind) || Settings.card(kind).orientation === "landscape"}))   // built-in kinds, or a skin card's own
     readonly property var layout: Geometry.dealLeft(width, height, Navigation.lane, deckItems, page, chromeLeft, chromeTop, deckOptions)
     readonly property bool active: Navigation.group !== "" || Navigation.device !== ""
     screen: Navigation.screen || Quickshell.screens[0]
