@@ -17,7 +17,7 @@ Singleton {
     property string device: ""          // from brightnessctl's first field
     readonly property bool busy: command.busy
     readonly property string sysfs: (Quickshell.env("ILLUMINATED_BACKLIGHT_ROOT") || "/sys/class/backlight") + "/" + device
-    function commandArguments() { return ["brightnessctl", "--class=backlight"].concat(Settings.backlightDevice ? ["--device", Settings.backlightDevice] : []); }
+    function commandArguments() { return ["brightnessctl", "--class=backlight"].concat(Settings.option("hardware.backlightDevice") ? ["--device", Settings.option("hardware.backlightDevice")] : []); }
     function readSysfs() {
         if (!device || writing) return false;
         actual.reload(); maximum.reload();
@@ -47,5 +47,5 @@ Singleton {
             } else { if (!root.writing) root.available = false; root.writing = false; }
         }
     }
-    Timer { interval: 3000; running: Settings.enableOsd; repeat: true; triggeredOnStart: true; onTriggered: root.read() }
+    Timer { interval: 3000; running: Settings.option("features.osd"); repeat: true; triggeredOnStart: true; onTriggered: root.read() }
 }

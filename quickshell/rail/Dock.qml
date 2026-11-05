@@ -44,8 +44,8 @@ PanelWindow {
         x: root.width * 7 / 8; y: 0; width: root.width / 8; height: 4
         HoverHandler { id: triggerHover }
     }
-    Timer { id: dwell; interval: Settings.dockDwell; running: root.autoHide && !root.revealed && triggerHover.hovered; onTriggered: root.revealed = true }
-    Timer { id: hideTimer; interval: Settings.dockHideDelay; running: root.autoHide && root.revealed && !root.hovered && root.pending.length === 0; onTriggered: { root.revealed = false; hoverTag.hide(); } }
+    Timer { id: dwell; interval: Settings.option("dock.dwell"); running: root.autoHide && !root.revealed && triggerHover.hovered; onTriggered: root.revealed = true }
+    Timer { id: hideTimer; interval: Settings.option("dock.hideDelay"); running: root.autoHide && root.revealed && !root.hovered && root.pending.length === 0; onTriggered: { root.revealed = false; hoverTag.hide(); } }
     function apply() {
         const chosen = root.pending.map(id => root.windows.find(w => w.id === id)).filter(w => w);
         root.pending = [];

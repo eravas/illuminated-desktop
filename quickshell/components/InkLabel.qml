@@ -10,7 +10,7 @@ Label {
     color: variant === "small" ? Theme.mutedInk : Theme.ink
     font.family: lettered ? Theme.cardFamily : Theme.serifFamily
     font.bold: lettered && Theme.cardBold
-    font.pixelSize: variant === "heading" ? Settings.headingPixelSize : variant === "small" ? Settings.smallPixelSize : variant === "display" ? Settings.displayPixelSize : Settings.fontPixelSize
+    font.pixelSize: variant === "heading" ? Settings.option("typography.heading") : variant === "small" ? Settings.smallPixelSize : variant === "display" ? Settings.option("typography.display") : Settings.fontPixelSize
     textFormat: Text.PlainText
     wrapMode: Text.WordWrap
 }

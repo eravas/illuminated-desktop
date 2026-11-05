@@ -97,7 +97,7 @@ Item {
             property real wheelSum: 0
             onWheel: function(event) {
                 wheelSum += event.angleDelta.y || event.angleDelta.x;
-                while (Math.abs(wheelSum) >= Settings.mediaScrollThreshold) { root.cycle(wheelSum > 0 ? -1 : 1); wheelSum -= Math.sign(wheelSum) * Settings.mediaScrollThreshold; }
+                while (Math.abs(wheelSum) >= Settings.option("media.scrollThreshold")) { root.cycle(wheelSum > 0 ? -1 : 1); wheelSum -= Math.sign(wheelSum) * Settings.option("media.scrollThreshold"); }
                 event.accepted = true;
             }
         }

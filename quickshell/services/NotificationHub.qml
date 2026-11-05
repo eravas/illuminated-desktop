@@ -28,7 +28,7 @@ Singleton {
             urgency: critical ? 2 : notification.urgency === NotificationUrgency.Low ? 0 : 1,
             // Critical slips stay until dismissed (freedesktop spec); others for their timeout.
             deadline: quiet ? 0 : critical ? time + 864e5 * 365 : time + (notification.expireTimeout > 0 ? notification.expireTimeout : 6000)};
-        history = [row].concat(history.filter(r => r !== previous)).slice(0, Settings.notificationHistoryLimit);
+        history = [row].concat(history.filter(r => r !== previous)).slice(0, Settings.option("notifications.historyLimit"));
         save.restart();
     }
     function closed(id) {
@@ -70,7 +70,7 @@ Singleton {
             try {
                 const state = JSON.parse(text());
                 root.dnd = !!state.dnd;
-                if (Array.isArray(state.history)) root.history = root.history.concat(state.history.filter(row => !root.live[row.id]).slice(0, Settings.notificationHistoryLimit).map(row => Object.assign({}, row, {active: false, uid: row.uid || row.timestamp + "-" + row.id}))).slice(0, Settings.notificationHistoryLimit);
+                if (Array.isArray(state.history)) root.history = root.history.concat(state.history.filter(row => !root.live[row.id]).slice(0, Settings.option("notifications.historyLimit")).map(row => Object.assign({}, row, {active: false, uid: row.uid || row.timestamp + "-" + row.id}))).slice(0, Settings.option("notifications.historyLimit"));
             } catch (e) { root.storageError = "Unreadable saved notification history"; }
         }
     }

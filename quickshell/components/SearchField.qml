@@ -8,7 +8,7 @@ import "../materials"
 TextField {
     id: root
     property bool lettered: false        // blackletter placeholder (the launcher's Search)
-    implicitHeight: Settings.controlHeight
+    implicitHeight: Settings.option("dimensions.controlHeight")
     font.family: Theme.serifFamily
     font.pixelSize: Settings.fontPixelSize
     color: Theme.ink

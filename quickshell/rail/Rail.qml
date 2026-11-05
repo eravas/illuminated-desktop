@@ -133,13 +133,13 @@ PanelWindow {
             Text {
                 id: clock
                 anchors.horizontalCenter: parent.horizontalCenter
-                text: Qt.formatDateTime(Time.now, Settings.timeFormat); textFormat: Text.PlainText
+                text: Qt.formatDateTime(Time.now, Settings.option("clock.timeFormat")); textFormat: Text.PlainText
                 font.family: Theme.cardFamily; font.bold: Theme.cardBold; font.pixelSize: Math.round(21 * Theme.typeScale)
                 color: Theme.ink
             }
             Text {
                 id: date
-                visible: Settings.railShowDate
+                visible: Settings.option("rail.showDate")
                 anchors { top: clock.bottom; horizontalCenter: parent.horizontalCenter }
                 text: Qt.formatDateTime(Time.now, "d MMM"); textFormat: Text.PlainText
                 font.family: Theme.serifFamily; font.pixelSize: Math.round(13 * Theme.typeScale)
@@ -166,7 +166,7 @@ PanelWindow {
     // Devices lie on top of the rail, so they come after (above) the strip.
     MediaBay {
         id: bay
-        visible: Settings.enableMedia
+        visible: Settings.option("features.media")
         x: 0; y: 0; width: root.width; height: root.height
         screen: root.screen; tag: hoverTag
         bayTop: root.bayAnchor ? strip.y + column.y + root.bayAnchor.y : root.height

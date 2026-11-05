@@ -23,7 +23,7 @@ Scope {
     readonly property var windows: ready ? WindowLogic.hyprlandWindows(Hyprland.toplevels.values, Hyprland.activeToplevel ? Hyprland.activeToplevel.address : "", Settings.dockMinimizeWorkspace) : []
     readonly property string currentWorkspace: ready && Hyprland.focusedMonitor && Hyprland.focusedMonitor.activeWorkspace ? String(Hyprland.focusedMonitor.activeWorkspace.name) : ""
     function send(kind, vars) {
-        const request = WindowLogic.dispatchFor(kind, Hyprland.usingLua, Settings.dockDispatch, vars);
+        const request = WindowLogic.dispatchFor(kind, Hyprland.usingLua, Settings.option("dock.dispatch"), vars);
         if (request) Hyprland.dispatch(request);
         return request !== "";
     }

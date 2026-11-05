@@ -37,7 +37,7 @@ Singleton {
         case "dnd": NotificationHub.dnd = !NotificationHub.dnd; return true;
         case "hide": Navigation.dismiss(); return true;
         case "command": {
-            const argv = Settings.customCommands[a.arg];
+            const argv = (Settings.option("commands.custom") || ({}))[a.arg];
             if (!Array.isArray(argv) || !argv.length) { console.warn("illuminated skin: no [commands.custom]." + a.arg); return false; }
             Quickshell.execDetached(argv); return true;
         }
@@ -51,10 +51,10 @@ Singleton {
         switch (a.name) {
         case "deal": return Settings.enableCards && !!Settings.group(a.arg);
         case "notifications": case "history": return Settings.enableCards;
-        case "clipboard": return Settings.enableCards && Settings.enableClipboard;
-        case "tray": return Settings.enableCards && Settings.enableTray;
+        case "clipboard": return Settings.enableCards && Settings.option("features.clipboard");
+        case "tray": return Settings.enableCards && Settings.option("features.tray");
         case "sheet": return Settings.enableCards;
-        case "command": return Array.isArray(Settings.customCommands[a.arg]);
+        case "command": return Array.isArray((Settings.option("commands.custom") || ({}))[a.arg]);
         case "media": return MediaState.player !== null;
         }
         return true;

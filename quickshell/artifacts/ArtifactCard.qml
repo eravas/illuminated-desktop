@@ -90,7 +90,7 @@ FocusScope {
                     if (!pressed || !root.direct || pressedButtons !== Qt.LeftButton) return;
                     const scene = mapToItem(null, mouse.x, mouse.y);
                     const dx = scene.x - root.pressScene.x, dy = scene.y - root.pressScene.y;
-                    if (Math.hypot(dx, dy) > Settings.dragThreshold) root.dragging = true;
+                    if (Math.hypot(dx, dy) > Settings.option("deck.dragThreshold")) root.dragging = true;
                     if (root.dragging) root.adjusted(root.horizontal ? dx / root.width : -dy / root.height);
                 }
                 onReleased: function(mouse) {

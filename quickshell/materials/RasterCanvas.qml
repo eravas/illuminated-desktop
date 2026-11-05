@@ -10,7 +10,7 @@ import "../config"
 Item {
     id: root
     property real dpr: Screen.devicePixelRatio > 0 ? Screen.devicePixelRatio : 1
-    readonly property int grain: Math.max(1, Math.round(Settings.pixelLogical * dpr))
+    readonly property int grain: Math.max(1, Math.round(Settings.option("pixel.logical") * dpr))
     readonly property int deviceWidth: Math.max(1, Math.round(width * dpr))
     readonly property int deviceHeight: Math.max(1, Math.round(height * dpr))
     property int coalesce: 0

@@ -137,8 +137,8 @@ PanelWindow {
         VellumSheet {
             id: sheet
             objectName: "cards-sheet"
-            width: Math.min(Settings.sheetWidth, root.width - 24)
-            height: Math.min(Settings.sheetHeight, root.height - root.chromeTop - 32)
+            width: Math.min(Settings.option("dimensions.sheetWidth"), root.width - 24)
+            height: Math.min(Settings.option("dimensions.sheetHeight"), root.height - root.chromeTop - 32)
             // Beside the rail at the dealing initial's height.
             x: root.chromeLeft + 12
             y: Math.max(root.chromeTop + 12, Math.min(root.height - height - 12, Navigation.lane - height / 2))

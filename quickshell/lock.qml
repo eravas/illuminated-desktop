@@ -40,9 +40,9 @@ Scope {
             color: Theme.paper
             readonly property bool isPrimary: !root.primary || surface.screen === root.primary
             Image {
-                visible: Settings.enableWallpaper && status === Image.Ready
+                visible: Settings.option("features.wallpaper") && status === Image.Ready
                 anchors.fill: parent
-                source: !Settings.enableWallpaper ? "" : Settings.wallpaperPath ? "file://" + Settings.wallpaperPath : Qt.resolvedUrl("assets/wallpaper.jpg")
+                source: !Settings.option("features.wallpaper") ? "" : Settings.wallpaperPath ? "file://" + Settings.wallpaperPath : Qt.resolvedUrl("assets/wallpaper.jpg")
                 fillMode: Image.PreserveAspectCrop
                 sourceSize.width: Math.round(surface.width * (surface.screen ? surface.screen.devicePixelRatio : 1))
                 asynchronous: true
@@ -60,7 +60,7 @@ Scope {
                     spacing: 8
                     Text {
                         Layout.alignment: Qt.AlignHCenter
-                        text: Qt.formatDateTime(Time.now, Settings.timeFormat); textFormat: Text.PlainText
+                        text: Qt.formatDateTime(Time.now, Settings.option("clock.timeFormat")); textFormat: Text.PlainText
                         font.family: Theme.cardFamily; font.bold: Theme.cardBold; font.pixelSize: Math.round(64 * Theme.typeScale)
                         color: Theme.ink
                     }
@@ -90,7 +90,7 @@ Scope {
     }
     PamContext {
         id: pam
-        config: Settings.lockPam
+        config: Settings.option("lock.pam")
         onPamMessage: { root.busy = false; if (!pam.responseRequired) { root.message = pam.message; root.error = pam.messageIsError; } }
         onCompleted: result => {
             root.busy = false;
@@ -107,7 +107,7 @@ Scope {
     Timer { id: restart; interval: Math.min(5000, 400 * Math.max(1, root.failures)); onTriggered: root.begin() }
     function begin() {
         if (!session.locked || pam.active) return;
-        if (!pam.start()) { root.error = true; root.message = "Could not start PAM (" + Settings.lockPam + "); trying again."; restart.restart(); }
+        if (!pam.start()) { root.error = true; root.message = "Could not start PAM (" + Settings.option("lock.pam") + "); trying again."; restart.restart(); }
     }
     function respond(text) {
         if (!pam.active || !pam.responseRequired) return;
