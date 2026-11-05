@@ -1,5 +1,6 @@
 pragma ComponentBehavior: Bound
 import QtQuick
+import QtQuick.Layouts
 import Quickshell
 import "../theme"
 import "../config"
@@ -9,11 +10,17 @@ import "../materials"
 // footprint takes space); names show on hover. DESIGN.md §6.
 Item {
     id: root
-    required property var context
-    property var tag: null
+    Layout.fillWidth: true
+    Layout.fillHeight: true
+    Layout.minimumHeight: rowHeight * 2
+    Layout.maximumHeight: Math.max(implicitHeight, 0)
+    // The rail's desktop context and hover tag, from the RailLayout this is in (or set directly).
+    property var host: null
+    property var context: host ? host.desktop : null
+    property var tag: host ? host.tag : null
     readonly property int rowHeight: Math.round(30 * Theme.typeScale)
     implicitHeight: list.contentHeight
-    readonly property int activeIndex: (context.spaces || []).findIndex(w => w.active)
+    readonly property int activeIndex: (context && context.spaces || []).findIndex(w => w.active)
     Flickable {
         id: list
         anchors.fill: parent
@@ -27,11 +34,11 @@ Item {
             Repeater {
                 // Keyed by workspace/tag id, so a window title change (which rebuilds the
                 // spaces) does not recreate the numerals. Each slot reads its live space.
-                model: ScriptModel { values: root.context.spaces || []; objectProp: "id" }
+                model: ScriptModel { values: root.context && root.context.spaces || []; objectProp: "id" }
                 Item {
                     id: slot
                     required property var modelData
-                    readonly property var space: (root.context.spaces || []).find(s => s.id === modelData.id) || modelData
+                    readonly property var space: (root.context && root.context.spaces || []).find(s => s.id === modelData.id) || modelData
                     objectName: "rail-space"
                     readonly property bool occupied: space.count !== undefined ? space.count > 0 : space.toplevels ? space.toplevels.values.length > 0 : false
                     readonly property string text: Theme.numeral(space.id) || String(space.name).slice(0, 3)

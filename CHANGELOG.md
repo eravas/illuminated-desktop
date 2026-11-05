@@ -25,6 +25,17 @@ has been verified, and how, are in [docs/STATUS.md](docs/STATUS.md).
 - **Card behaviour is no longer configuration.** `[cards.*]` keeps `title`, `short`,
   `sheet` and `confirm`; orientation, click/drag behaviour and Sleep's menu come from the
   card kind. (Setting `cards.volume.interaction = "toggle"` used to turn clicks into flips.)
+- **QML skins.** A skin is a folder of QML files laid over the default skin by file
+  (`illuminated apply` builds `generated/skin/`); `skin.json` keeps only data (devices,
+  materials, loupes, card art, pins). Rail and dock objects are `SkinItem`s showing pre-baked
+  frames; the shell no longer composites, dithers or shadows them at runtime (they cost 0.6–2 s
+  of GUI time each on first paint, and ~400 ms per volume change). Skins in the old format
+  (`elements`, `rail.items`, `dock.before/after`, `cards`/`hands` in skin.json) are ignored with
+  a warning; see docs/SKINS.md to port one (the example skin shows every feature it had).
+  `ShellState` has typed properties instead of a `values` map. `illuminated doctor` runs
+  qmllint over your skin. Visible changes: rail objects sit 1–3 px differently (whole-pixel
+  boxes), and their art is scaled from 1× or 2× bakes when the output is not the 24″ 1080p
+  scale, instead of being dithered at the exact size.
 - Skin elements painted nothing under Qt 6.12 (`SkinElement.layer()` was shadowed by
   `Item.layer`); fixed.
 - The `Materials.js` facade moved from `quickshell/materials/` to `scripts/skin/` (tests and

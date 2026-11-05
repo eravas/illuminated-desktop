@@ -5,16 +5,23 @@ import "../config"
 import "../services"
 import "../artifacts"
 import "../compositors"
-import "Skin.js" as Skin
 // What a skin button can do (docs/SKINS.md, "Actions"). One registry: every trigger in every
 // skin goes through run(); labels and availability come from here too, so tags and disabled
 // regions agree with what a click would do. Commands are names from config.toml
-// [commands.custom]; a skin can name one but never supply an argv.
+// [commands.custom], run as "command:<name>". A skin is trusted code like the rest of the rice
+// (it is QML): this registry is a convenience, not a security boundary.
 Singleton {
     id: root
+    // "name" or "name:arg"; null for an unknown action.
+    readonly property var names: ["none", "launcher", "deal", "sheet", "notifications", "history", "clipboard", "tray", "mute", "volume", "brightness", "microphone", "workspace", "minimize", "lock", "media", "dnd", "hide", "command"]
+    function parse(s) {
+        if (typeof s !== "string" || !s) return null;
+        const i = s.indexOf(":"), name = i < 0 ? s : s.slice(0, i), arg = i < 0 ? "" : s.slice(i + 1);
+        return names.indexOf(name) < 0 ? null : {name: name, arg: arg};
+    }
     // ctx: {screen, y (screen y of the item, for dealing)}
     function run(action, ctx) {
-        const a = Skin.parseAction(action);
+        const a = parse(action);
         if (!a || !available(action)) return false;
         const c = ctx || {}, screen = c.screen || DesktopState.focusedScreen;
         switch (a.name) {
@@ -46,10 +53,10 @@ Singleton {
     }
     // Whether an action can do anything right now (disabled regions are not drawn or clickable).
     function available(action) {
-        const a = Skin.parseAction(action);
+        const a = parse(action);
         if (!a) return false;
         switch (a.name) {
-        case "deal": return Settings.enableCards && !!Settings.group(a.arg);
+        case "deal": return Settings.enableCards && !!SkinStore.group(a.arg);
         case "notifications": case "history": return Settings.enableCards;
         case "clipboard": return Settings.enableCards && Settings.option("features.clipboard");
         case "tray": return Settings.enableCards && Settings.option("features.tray");
@@ -61,11 +68,11 @@ Singleton {
     }
     // A default tag for an action when the skin gives none.
     function label(action) {
-        const a = Skin.parseAction(action);
+        const a = parse(action);
         if (!a) return "";
         switch (a.name) {
         case "launcher": return "Launcher";
-        case "deal": { const g = Settings.group(a.arg); return g ? (g.label || a.arg) : a.arg; }
+        case "deal": { const g = SkinStore.group(a.arg); return g ? (g.label || a.arg) : a.arg; }
         case "notifications": return "Notifications" + (NotificationHub.unread ? " · " + NotificationHub.unread + " unread" : "") + (NotificationHub.dnd ? " · quiet" : "");
         case "clipboard": return "Clipboard history";
         case "history": return "Notification history";
@@ -79,7 +86,7 @@ Singleton {
     }
     function step(arg) { const v = parseFloat(arg); return isFinite(v) ? v / 100 : 0.05; }
     function deal(name, screen, y) {
-        if (!Settings.enableCards || !Settings.group(name)) return false;
+        if (!Settings.enableCards || !SkinStore.group(name)) return false;
         Navigation.open(name, screen, y); return true;
     }
     function workspace(arg, screen) {

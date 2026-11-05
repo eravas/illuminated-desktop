@@ -1,8 +1,8 @@
 .pragma library
 .import "Skin.js" as Skin
-.import "../materials/ArtLayers.js" as Px
-.import "../materials/Colour.js" as Colour
-.import "../materials/Pixels.js" as Pixels
+.import "../../quickshell/materials/ArtLayers.js" as Px
+.import "../../quickshell/materials/Colour.js" as Colour
+.import "../../quickshell/materials/Pixels.js" as Pixels
 // A skin element's look → finished pixels (docs/SKINS.md). The caller supplies `layer(ref,
 // rect)`: the image ref drawn into rect (element units) over the whole canvas, as a W × H RGBA
 // array (rasterised once and cached by the caller). Everything else is pixel work here.

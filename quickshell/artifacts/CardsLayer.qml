@@ -23,14 +23,14 @@ PanelWindow {
     property int selectedIndex: 0
     onSelectedIndexChanged: if (!Navigation.sheet) Qt.callLater(function() { root.focusSelection(); })
     // Membership, orientation and sheets come from [groups] and [cards] in config.
-    readonly property var groupSpec: Settings.group(displayGroup) || ({cards: [], sheet: ""})
+    readonly property var groupSpec: SkinStore.group(displayGroup) || ({cards: [], sheet: ""})
     readonly property var kinds: groupSpec.cards || []
     // Hands travel in from the left at the dealing initial's height. Space the rail and a
     // permanent dock take is kept clear.
     readonly property int chromeLeft: Settings.enableRail ? Settings.railReserved : 0
     readonly property int chromeTop: Settings.enableDock && Settings.dockMode(screen ? screen.name : "", height) === "permanent" ? Settings.dockReserved : 0
     readonly property var deckOptions: ({cardWidth:Settings.cardWidth, landscapeWidth:Settings.landscapeCardWidth, gap:Math.max(Settings.cardGap, Settings.selectionLift + 8), margin:Settings.cardMargin, rotation:Math.min(7,Math.abs(Settings.cardRotation)), aligned:Settings.deckAligned, lift:Settings.selectionLift})
-    readonly property var deckItems: kinds.map(kind => ({landscape: Kinds.landscape(kind) || Settings.card(kind).orientation === "landscape"}))   // built-in kinds, or a skin card's own
+    readonly property var deckItems: kinds.map(kind => ({landscape: Kinds.landscape(kind) || SkinStore.card(kind).orientation === "landscape"}))   // built-in kinds, or a skin card's own
     readonly property var layout: Geometry.dealLeft(width, height, Navigation.lane, deckItems, page, chromeLeft, chromeTop, deckOptions)
     readonly property bool active: Navigation.group !== "" || Navigation.device !== ""
     screen: Navigation.screen || Quickshell.screens[0]
@@ -61,7 +61,7 @@ PanelWindow {
     function focusSelection() { const card = selection(); if (card) card.focusFace(); else focusScope.forceActiveFocus(); }
     onPhaseChanged: if (phase <= 0) sync()
     Behavior on phase { NumberAnimation { duration: Motion.deploy + Motion.stagger * Math.max(0, root.layout.cards.length - 1); easing.type: Motion.easing } }
-    Connections { target: Navigation; function onGroupChanged() { SessionState.cancel(); root.pendingPage = 0; root.sync(); const spec = Settings.group(Navigation.group); if (spec && !spec.cards.length && spec.sheet && !Navigation.sheet) Navigation.expand(spec.sheet); } function onSheetChanged() { if (Navigation.sheet) Qt.callLater(function() { focusScope.forceActiveFocus(); }); else Qt.callLater(function() { root.focusSelection(); }); } }
+    Connections { target: Navigation; function onGroupChanged() { SessionState.cancel(); root.pendingPage = 0; root.sync(); const spec = SkinStore.group(Navigation.group); if (spec && !spec.cards.length && spec.sheet && !Navigation.sheet) Navigation.expand(spec.sheet); } function onSheetChanged() { if (Navigation.sheet) Qt.callLater(function() { focusScope.forceActiveFocus(); }); else Qt.callLater(function() { root.focusSelection(); }); } }
     Connections { target: Quickshell; function onScreensChanged() { if (Navigation.screen && Quickshell.screens.indexOf(Navigation.screen) < 0) Navigation.dismiss(); } }
     onVisibleChanged: if (visible) Qt.callLater(function() { focusScope.forceActiveFocus(); })
     Component.onDestruction: { Navigation.dismiss(); SessionState.cancel(); }

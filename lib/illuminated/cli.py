@@ -11,7 +11,7 @@ import sys
 import time
 from pathlib import Path
 
-from . import config, generate, paths
+from . import skin, config, generate, paths
 
 ISOLATE = {"wallpaper": "wallpaper.qml", "chrome": "chrome-entry.qml", "cards": "cards-preview.qml", "launcher": "launcher.qml",
            "notifications": "notifications.qml",
@@ -113,11 +113,17 @@ def apply_config(launcher: str | None = None, check=False, diff=False) -> tuple[
         temporary = target.with_name(f".{target.name}.tmp")
         temporary.write_text(text)
         os.replace(temporary, target)
+    messages += skin.merge(Path(shell_qml("skins/default")), user_skin_dir(resolved.values), directory / "skin")
     messages.append(f"applied {resolved.source or 'defaults'} → {directory}"
                     + (f" (compositor: {resolved.compositor})" if resolved.compositor else ""))
     if any(n in changed for n in ("hyprland.lua", "mango.conf")):
         messages.append("compositor files changed; reload your compositor to pick up binds/borders")
     return True, messages
+
+
+def user_skin_dir(values) -> Path:
+    path = (values.get("skin") or {}).get("path") or ""
+    return Path(os.path.expanduser(path)) if path else paths.user_config().parent / "skin"
 
 
 def _ensure_applied():
@@ -191,40 +197,35 @@ def doctor() -> int:
             present = BEGIN[name] in file.read_text()
             line(present or name != compositor, f"{name}: {file} {'loads' if present else 'does not load'} the generated file")
     values = resolved.values if resolved else config.shell_defaults()
-    skin_dir = Path(os.path.expanduser(values.get("skin", {}).get("path") or "")) if values.get("skin", {}).get("path") else paths.user_config().parent / "skin"
-    skin_file = skin_dir / "skin.json"
-    if skin_file.exists():
+    skin_dir = user_skin_dir(values)
+    if skin_dir.is_dir():
         print(f"Your skin: {skin_dir} (docs/SKINS.md)")
-        try:
-            skin = json.loads(skin_file.read_text())
-            line(True, "skin.json parses")
-            files, actions = set(), set()
-            def walk(v):
-                if isinstance(v, dict):
-                    for k, x in v.items():
-                        if k == "triggers" and isinstance(x, dict):
-                            actions.update(a for a in x.values() if isinstance(a, str))
-                        walk(x)
-                elif isinstance(v, list):
-                    for x in v: walk(x)
-                elif isinstance(v, str) and re.search(r"\.(png|jpe?g|webp)$", v, re.I):
-                    files.add(v)
-            walk(skin)
-            missing = sorted(f for f in files if not (Path(f) if f.startswith("/") else skin_dir / f).exists())
-            line(not missing, "every image it names exists" + (f"; missing: {', '.join(missing[:8])}" + (" …" if len(missing) > 8 else "") if missing else ""))
-            custom = values.get("commands", {}).get("custom", {}) or {}
-            unknown = sorted(a for a in actions if a.startswith("command:") and a[8:] not in custom)
-            line(not unknown, "every command it names is in [commands.custom]" + (f"; missing: {', '.join(unknown)}" if unknown else ""))
-            # The shell's own rules (Skin.check), when node is present; the checks above need none.
-            checker = paths.project_root() / "scripts" / "skin" / "check.cjs"
-            if shutil.which("node") and checker.exists():
-                r = subprocess.run(["node", str(checker), str(paths.shell_dir()), str(skin_file)], capture_output=True, text=True)
-                errs = [e for e in r.stdout.splitlines() if e.strip()]
-                line(r.returncode == 0, "the shell accepts it" + (f"; {len(errs)} error(s): " + "; ".join(errs[:5]) if errs else ""))
-            else:
-                print("  --   shell rules not checked (needs node)")
-        except ValueError as e:
-            line(False, f"skin.json does not parse ({e})")
+        old = skin.old_format(skin_dir)
+        line(not old, "QML skin" if not old else skin.OLD_FORMAT)
+        merged = paths.generated_dir() / "skin"
+        line(merged.is_dir(), "laid over the default skin (generated/skin)" if merged.is_dir() else "not laid over the default yet; run `illuminated apply`")
+        # Your QML through qmllint, when it is installed: unknown types, missing imports, typos.
+        lint = next((c for c in ("/usr/lib/qt6/bin/qmllint", "/usr/lib64/qt6/bin/qmllint") if Path(c).exists()), shutil.which("qmllint6") or shutil.which("qmllint"))
+        mine = sorted(skin_dir.glob("*.qml"))
+        if lint and mine and not old:
+            import tempfile
+            shell = Path(shell_qml(""))
+            lint_problems = []
+            with tempfile.TemporaryDirectory() as imports:
+                # Quickshell resolves `import qs.skin` itself; qmllint needs a qs/ folder for it.
+                (Path(imports) / "qs").mkdir()
+                os.symlink(shell / "skin", Path(imports) / "qs" / "skin")
+                # A real copy of the merged skin: qmllint follows symlinks, and your Rail.qml must
+                # see the default's objects beside it, as the shell does.
+                tree = Path(imports) / "skin"
+                shutil.copytree(merged if merged.is_dir() else skin_dir, tree, symlinks=False,
+                                ignore=lambda d, names: [n for n in names if not n.endswith(".qml") and not (Path(d) / n).is_dir()])
+                for f in mine:
+                    r = subprocess.run([lint, "-I", imports, "-I", "/usr/lib/qt6/qml", str(tree / f.name)], capture_output=True, text=True)
+                    lint_problems += [l for l in (r.stdout + r.stderr).splitlines() if l.startswith("Warning:") and ("is not a type" in l or "unresolved" in l or "Failed to import" in l or "not found" in l and "import" in l)]
+            line(not lint_problems, "qmllint finds no unknown types or imports" + (f"; {len(lint_problems)}: " + "; ".join(lint_problems[:3]) if lint_problems else ""))
+        elif not lint:
+            print("  --   QML not checked (needs qmllint)")
     print("Commands")
     wanted = {"quickshell": True, "hyprctl": compositor == "hyprland", "mmsg": compositor == "mango",
               values["commands"]["lock"][0]: True, "systemctl": True, "brightnessctl": True, "wpctl": True,

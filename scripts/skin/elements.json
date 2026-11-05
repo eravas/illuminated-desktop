@@ -1,0 +1,839 @@
+{
+ "default": {
+  "units": "mm",
+  "inks": {
+   "iron-gall": [
+    "#151C30",
+    "#24304F",
+    "#3A4C78"
+   ]
+  },
+  "sheets": {
+   "antenna": {
+    "file": "default/rail/antenna-sheet.png",
+    "columns": 6
+   },
+   "writing": {
+    "file": "default/rail/writing-sheet.png",
+    "columns": 7
+   }
+  },
+  "images": {
+   "nib": "default/rail/nib.png",
+   "matchbox": "default/rail/matchbox.png",
+   "vial": "default/rail/vial.png",
+   "vial.ink": "default/rail/vial-ink.png",
+   "converter": "default/rail/converter.png",
+   "converter.ink": "default/rail/converter-ink.png",
+   "paper": "default/rail/paper.png",
+   "paperclip": "default/rail/paperclip.png",
+   "tray.light": "default/rail/tray-light.png",
+   "tray.dark": "default/rail/tray-dark.png",
+   "antenna.light": {
+    "sheet": "antenna",
+    "grid": [
+     170,
+     120
+    ],
+    "start": 0,
+    "count": 5
+   },
+   "antenna.light.connecting": {
+    "sheet": "antenna",
+    "grid": [
+     170,
+     120
+    ],
+    "start": 5,
+    "count": 1
+   },
+   "antenna.dark": {
+    "sheet": "antenna",
+    "grid": [
+     170,
+     120
+    ],
+    "start": 6,
+    "count": 5
+   },
+   "antenna.dark.connecting": {
+    "sheet": "antenna",
+    "grid": [
+     170,
+     120
+    ],
+    "start": 11,
+    "count": 1
+   },
+   "writing": {
+    "sheet": "writing",
+    "grid": [
+     180,
+     220
+    ],
+    "start": 0,
+    "count": 7
+   }
+  },
+  "elements": {
+   "tray": {
+    "units": "px",
+    "size": [
+     24,
+     24
+    ],
+    "anchor": [
+     12,
+     12
+    ],
+    "image": "tray.light",
+    "states": [
+     {
+      "when": {
+       "source": "mode",
+       "eq": "dark"
+      },
+      "image": "tray.dark"
+     }
+    ],
+    "dither": false,
+    "shadow": false,
+    "hit": {
+     "rect": [
+      -8,
+      -4,
+      40,
+      32
+     ]
+    },
+    "triggers": {
+     "click": "tray"
+    },
+    "tag": "Tray"
+   },
+   "nib": {
+    "size": [
+     17,
+     10
+    ],
+    "anchor": [
+     16,
+     5
+    ],
+    "image": "nib",
+    "triggers": {
+     "click": "launcher"
+    },
+    "tag": "Launcher"
+   },
+   "vial": {
+    "size": [
+     17,
+     9
+    ],
+    "anchor": [
+     16,
+     4.5
+    ],
+    "image": "vial",
+    "ink": {
+     "mask": "vial.ink",
+     "from": [
+      8,
+      8.1
+     ],
+     "to": [
+      8,
+      0.8999999999999999
+     ],
+     "source": "volume"
+    },
+    "triggers": {
+     "click": "deal:levels",
+     "scrollUp": "volume:+5",
+     "scrollDown": "volume:-5",
+     "middleClick": "mute"
+    }
+   },
+   "antenna": {
+    "size": [
+     17,
+     12
+    ],
+    "anchor": [
+     16,
+     6
+    ],
+    "frames": {
+     "source": "network.stage",
+     "min": 0,
+     "max": 4,
+     "images": "antenna.light"
+    },
+    "states": [
+     {
+      "when": {
+       "all": [
+        {
+         "source": "mode",
+         "eq": "dark"
+        },
+        {
+         "source": "network.connecting",
+         "truthy": true
+        },
+        {
+         "source": "network.stage",
+         "eq": 0
+        }
+       ]
+      },
+      "image": "antenna.dark.connecting"
+     },
+     {
+      "when": {
+       "all": [
+        {
+         "source": "network.connecting",
+         "truthy": true
+        },
+        {
+         "source": "network.stage",
+         "eq": 0
+        }
+       ]
+      },
+      "image": "antenna.light.connecting"
+     },
+     {
+      "when": {
+       "source": "mode",
+       "eq": "dark"
+      },
+      "frames": {
+       "source": "network.stage",
+       "min": 0,
+       "max": 4,
+       "images": "antenna.dark"
+      }
+     }
+    ],
+    "triggers": {
+     "click": "deal:connections"
+    }
+   },
+   "converter": {
+    "size": [
+     17,
+     28
+    ],
+    "anchor": [
+     16,
+     14
+    ],
+    "image": "converter",
+    "visibleWhen": {
+     "source": "battery.present",
+     "truthy": true
+    },
+    "ink": {
+     "mask": "converter.ink",
+     "from": [
+      12.37,
+      5.46
+     ],
+     "to": [
+      1.66,
+      19.17
+     ],
+     "source": "battery.level",
+     "bands": {
+      "source": "battery.state",
+      "eq": "chg"
+     }
+    },
+    "markers": [
+     {
+      "at": [
+       14.34,
+       2.94
+      ],
+      "shape": "dot",
+      "when": {
+       "source": "battery.state",
+       "eq": "held"
+      }
+     }
+    ],
+    "triggers": {
+     "click": "deal:battery"
+    }
+   },
+   "matchbox": {
+    "size": [
+     17,
+     13
+    ],
+    "anchor": [
+     16,
+     6.5
+    ],
+    "image": "matchbox",
+    "triggers": {
+     "click": "deal:power"
+    }
+   },
+   "paper": {
+    "size": [
+     18,
+     22
+    ],
+    "anchor": [
+     0,
+     22
+    ],
+    "image": "paper",
+    "triggers": {
+     "click": "notifications"
+    },
+    "regions": [
+     {
+      "id": "writing",
+      "frames": {
+       "source": "notifications.unread",
+       "min": 0,
+       "max": 6,
+       "images": "writing"
+      }
+     },
+     {
+      "id": "clip",
+      "rect": [
+       -1.31,
+       5.53,
+       12,
+       12
+      ],
+      "image": "paperclip",
+      "triggers": {
+       "click": "clipboard"
+      },
+      "tag": "Clipboard history"
+     }
+    ]
+   },
+   "paperclip": {
+    "size": [
+     12,
+     12
+    ],
+    "anchor": [
+     0,
+     0
+    ],
+    "image": "paperclip"
+   }
+  }
+ },
+ "example": {
+  "units": "mm",
+  "inks": {
+   "iron-gall": [
+    "#151C30",
+    "#24304F",
+    "#3A4C78"
+   ]
+  },
+  "sheets": {
+   "antenna": {
+    "file": "default/rail/antenna-sheet.png",
+    "columns": 6
+   },
+   "writing": {
+    "file": "default/rail/writing-sheet.png",
+    "columns": 7
+   },
+   "clipWiggle": {
+    "file": "example/rail/clip-wiggle.png",
+    "columns": 5
+   }
+  },
+  "images": {
+   "nib": "default/rail/nib.png",
+   "matchbox": "default/rail/matchbox.png",
+   "vial": "default/rail/vial.png",
+   "vial.ink": "default/rail/vial-ink.png",
+   "converter": "default/rail/converter.png",
+   "converter.ink": "default/rail/converter-ink.png",
+   "paper": "default/rail/paper.png",
+   "paperclip": "default/rail/paperclip.png",
+   "tray.light": "default/rail/tray-light.png",
+   "tray.dark": "default/rail/tray-dark.png",
+   "antenna.light": {
+    "sheet": "antenna",
+    "grid": [
+     170,
+     120
+    ],
+    "start": 0,
+    "count": 5
+   },
+   "antenna.light.connecting": {
+    "sheet": "antenna",
+    "grid": [
+     170,
+     120
+    ],
+    "start": 5,
+    "count": 1
+   },
+   "antenna.dark": {
+    "sheet": "antenna",
+    "grid": [
+     170,
+     120
+    ],
+    "start": 6,
+    "count": 5
+   },
+   "antenna.dark.connecting": {
+    "sheet": "antenna",
+    "grid": [
+     170,
+     120
+    ],
+    "start": 11,
+    "count": 1
+   },
+   "writing": {
+    "sheet": "writing",
+    "grid": [
+     180,
+     220
+    ],
+    "start": 0,
+    "count": 7
+   },
+   "tray.stamp": "example/rail/tray-stamp.png",
+   "clip.wiggle": {
+    "sheet": "clipWiggle",
+    "grid": [
+     120,
+     120
+    ],
+    "start": 0,
+    "count": 5
+   },
+   "seal": "default/devices/seal.png",
+   "inkwell": "example/cards/inkwell.png"
+  },
+  "elements": {
+   "tray": {
+    "units": "px",
+    "size": [
+     24,
+     24
+    ],
+    "anchor": [
+     12,
+     12
+    ],
+    "image": "tray.light",
+    "states": [
+     {
+      "when": {
+       "source": "mode",
+       "eq": "dark"
+      },
+      "image": "tray.dark"
+     }
+    ],
+    "dither": false,
+    "shadow": false,
+    "hit": {
+     "rect": [
+      -8,
+      -4,
+      40,
+      32
+     ]
+    },
+    "triggers": {
+     "click": "tray"
+    },
+    "tag": "Tray"
+   },
+   "nib": {
+    "size": [
+     17,
+     10
+    ],
+    "anchor": [
+     16,
+     5
+    ],
+    "image": "nib",
+    "triggers": {
+     "click": "launcher"
+    },
+    "tag": "Launcher",
+    "animations": {
+     "hoverIn": {
+      "tween": {
+       "x": 1.5
+      },
+      "duration": 140
+     },
+     "hoverOut": {
+      "tween": {},
+      "duration": 180
+     },
+     "press": {
+      "tween": {
+       "x": -1
+      },
+      "duration": 60
+     },
+     "release": {
+      "tween": {
+       "x": 1.5
+      },
+      "duration": 90
+     }
+    }
+   },
+   "vial": {
+    "size": [
+     17,
+     9
+    ],
+    "anchor": [
+     16,
+     4.5
+    ],
+    "image": "vial",
+    "ink": {
+     "mask": "vial.ink",
+     "from": [
+      8,
+      8.1
+     ],
+     "to": [
+      8,
+      0.8999999999999999
+     ],
+     "source": "volume"
+    },
+    "triggers": {
+     "click": "deal:levels",
+     "scrollUp": "volume:+5",
+     "scrollDown": "volume:-5",
+     "middleClick": "mute"
+    }
+   },
+   "antenna": {
+    "size": [
+     17,
+     12
+    ],
+    "anchor": [
+     16,
+     6
+    ],
+    "frames": {
+     "source": "network.stage",
+     "min": 0,
+     "max": 4,
+     "images": "antenna.light"
+    },
+    "states": [
+     {
+      "when": {
+       "all": [
+        {
+         "source": "mode",
+         "eq": "dark"
+        },
+        {
+         "source": "network.connecting",
+         "truthy": true
+        },
+        {
+         "source": "network.stage",
+         "eq": 0
+        }
+       ]
+      },
+      "image": "antenna.dark.connecting"
+     },
+     {
+      "when": {
+       "all": [
+        {
+         "source": "network.connecting",
+         "truthy": true
+        },
+        {
+         "source": "network.stage",
+         "eq": 0
+        }
+       ]
+      },
+      "image": "antenna.light.connecting"
+     },
+     {
+      "when": {
+       "source": "mode",
+       "eq": "dark"
+      },
+      "frames": {
+       "source": "network.stage",
+       "min": 0,
+       "max": 4,
+       "images": "antenna.dark"
+      }
+     }
+    ],
+    "triggers": {
+     "click": "deal:connections"
+    }
+   },
+   "converter": {
+    "size": [
+     17,
+     28
+    ],
+    "anchor": [
+     16,
+     14
+    ],
+    "image": "converter",
+    "visibleWhen": {
+     "source": "battery.present",
+     "truthy": true
+    },
+    "ink": {
+     "mask": "converter.ink",
+     "from": [
+      12.37,
+      5.46
+     ],
+     "to": [
+      1.66,
+      19.17
+     ],
+     "source": "battery.level",
+     "bands": {
+      "source": "battery.state",
+      "eq": "chg"
+     }
+    },
+    "markers": [
+     {
+      "at": [
+       14.34,
+       2.94
+      ],
+      "shape": "dot",
+      "when": {
+       "source": "battery.state",
+       "eq": "held"
+      }
+     }
+    ],
+    "triggers": {
+     "click": "deal:battery"
+    }
+   },
+   "matchbox": {
+    "size": [
+     17,
+     13
+    ],
+    "anchor": [
+     16,
+     6.5
+    ],
+    "image": "matchbox",
+    "triggers": {
+     "click": "deal:power"
+    }
+   },
+   "paper": {
+    "size": [
+     18,
+     22
+    ],
+    "anchor": [
+     0,
+     22
+    ],
+    "image": "paper",
+    "triggers": {
+     "click": "notifications"
+    },
+    "regions": [
+     {
+      "id": "writing",
+      "frames": {
+       "source": "notifications.unread",
+       "min": 0,
+       "max": 6,
+       "images": "writing"
+      }
+     },
+     {
+      "id": "tray",
+      "rect": [
+       8,
+       15,
+       6,
+       6
+      ],
+      "image": "tray.stamp",
+      "triggers": {
+       "click": "tray"
+      },
+      "tag": "Tray",
+      "pad": 6
+     },
+     {
+      "id": "clip",
+      "rect": [
+       -1.31,
+       5.53,
+       12,
+       12
+      ],
+      "image": "paperclip",
+      "triggers": {
+       "click": "clipboard"
+      },
+      "tag": "Clipboard · {{clipboard.count}} {{clipboard.count|plural:entry}}",
+      "animations": {
+       "hoverIn": {
+        "frames": "clip.wiggle",
+        "fps": 16,
+        "mode": "once"
+       }
+      }
+     }
+    ]
+   },
+   "paperclip": {
+    "size": [
+     12,
+     12
+    ],
+    "anchor": [
+     0,
+     0
+    ],
+    "image": "paperclip"
+   },
+   "seal": {
+    "units": "px",
+    "size": [
+     26,
+     26
+    ],
+    "anchor": [
+     13,
+     13
+    ],
+    "image": "seal",
+    "triggers": {
+     "click": "deal:desk"
+    },
+    "tag": "Desk",
+    "animations": {
+     "hoverIn": {
+      "tween": {
+       "rotate": -12,
+       "scale": 1.08
+      },
+      "duration": 160,
+      "easing": "outBack"
+     },
+     "hoverOut": {
+      "tween": {},
+      "duration": 160
+     }
+    }
+   },
+   "quiet": {
+    "units": "px",
+    "size": [
+     30,
+     30
+    ],
+    "anchor": [
+     15,
+     15
+    ],
+    "image": "tray.stamp",
+    "dither": false,
+    "markers": [
+     {
+      "at": [
+       25,
+       5
+      ],
+      "shape": "dot",
+      "radius": 4,
+      "colour": "#ED4A49",
+      "when": {
+       "source": "notifications.dnd",
+       "truthy": true
+      }
+     }
+    ],
+    "triggers": {
+     "click": "dnd"
+    },
+    "tag": "Do not disturb"
+   },
+   "inkwell-face": {
+    "units": "px",
+    "size": [
+     154,
+     215.6
+    ],
+    "image": "inkwell",
+    "shadow": false,
+    "dither": true,
+    "regions": [
+     {
+      "id": "cork",
+      "rect": [
+       57,
+       20,
+       40,
+       40
+      ],
+      "triggers": {
+       "click": "deal:levels"
+      },
+      "tag": "Levels"
+     }
+    ]
+   },
+   "clip": {
+    "size": [
+     12,
+     12
+    ],
+    "anchor": [
+     0,
+     0
+    ],
+    "frames": {
+     "source": "frame",
+     "min": 0,
+     "max": 4,
+     "images": "clip.wiggle"
+    }
+   }
+  }
+ }
+}

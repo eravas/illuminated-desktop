@@ -1,326 +1,119 @@
 # Skins
 
-Everything you see on the rail and dock, the removable media, card art, launcher pins and the
-material textures comes from a **skin**: a `skin.json` plus image files and sprite sheets. The
-shell itself draws no objects. It loads your images, composites them, applies the dither and
-shadow, and runs the buttons you define.
+A skin is a folder of QML files and images. The default skin is
+`quickshell/skins/default/`; yours is `~/.config/illuminated/skin/` (or `skin.path` in
+`config.toml`). A skin is trusted code, like the rest of the rice: it runs in the shell.
 
-Skins are meant for people who want to change things beyond `config.toml`. They are
-deliberately outside the one-config rule. `config.toml` still decides *what the shell does*:
-which hands exist, which features are on, colours, reading options, named commands. The skin
-decides *what it looks like* and *where the buttons are*.
+## Layout
 
-- **The default skin** is `quickshell/skins/default/`. It is generated from the old drawings by
-  `node scripts/skin/build-materials.cjs` then `node scripts/skin/build-default.cjs`.
-- **Your skin** is `~/.config/illuminated/skin/` (or `[skin] path`). Its `skin.json` is laid
-  over the default key by key:
-  - objects merge;
-  - arrays replace;
-  - `null` removes a key.
+```
+skin/
+  skin.json        # data only: name, about, devices, media, materials, loupes, cardArt, pins, initial
+  Rail.qml         # the rail, top to bottom (a RailLayout)
+  DockChrome.qml   # objects before and after the dock's windows (a DockLayout)
+  Cards.qml        # optional: cards and hands the skin adds (SkinCards)
+  Vial.qml …       # the objects Rail.qml and DockChrome.qml use
+  elements/*.png   # their art; a "-2x" file beside each for large or HiDPI output
+```
 
-  So you only write what you change. File paths are relative to the skin they appear in; reach
-  the default's images with `../default/…` only if you copied the default next to yours,
-  otherwise copy the images you need.
-- **The worked example** is `quickshell/skins/example/`: copy it to
-  `~/.config/illuminated/skin/` to try it. It moves the tray onto the paper, adds a wax seal
-  that deals a new hand with a new card, a dock button, and hover animations.
-- **Reloading:** the shell watches both `skin.json` files. Replace images first, then save
-  `skin.json`; every image URL changes with the skin's version, so new images load.
-- **Checking:** `illuminated doctor` parses your skin and lists missing images and unknown
-  commands. The shell logs `illuminated skin: …` for anything it drops.
+## Overlay rule
 
-## Units
+**By file.** `illuminated apply` builds `~/.config/illuminated/generated/skin/`: every file of
+the default skin, with each file of yours in its place (and any you add). So a skin with only
+`Vial.qml` changes only the vial; one with `Rail.qml` rearranges the rail and still uses the
+default objects it names. The files are symlinks: edits show up live; adding or removing a
+file needs another `apply`. Until `apply` has run, the shell uses the default skin.
 
-`units` is `"mm"` (life size: scaled by the output's physical px/mm, like the removable media)
-or `"px"` (logical px). It is set skin-wide and can be overridden per element. Sizes, anchors,
-rects and points are in these units, measured from the element's top-left.
+`skin.json` is data and merges **key by key** over the default's (`null` removes a key).
 
-## Images and sheets
+A `skin.json` with `elements`, `rail.items` or `dock.before`/`dock.after` is the pre-QML format:
+`apply`, `doctor` and the shell say so, and the default skin is used instead.
+`illuminated doctor` runs `qmllint` over your QML when it is installed.
 
-```json
-"sheets": { "antenna": { "file": "rail/antenna-sheet.png", "columns": 6 } },
-"images": {
-  "nib": "rail/nib.png",
-  "vial.ink": { "file": "rail/vial-ink.png" },
-  "cell": { "sheet": "antenna", "rect": [0, 0, 170, 120] },
-  "antenna.light": { "sheet": "antenna", "grid": [170, 120], "start": 0, "count": 5 },
-  "both": ["nib", "cell"]
+## Rail.qml
+
+```qml
+import QtQuick
+import qs.skin
+RailLayout {
+    Tray {}  Nib {}  RailRule {}  RailWorkspaces {}  RailRule {}
+    Vial {}  Antenna {}  Converter {}  Matchbox {}
+    RailHands {}          // hands in rail.hands that no object deals: illuminated initials
+    RailSpacer {}  MediaBay {}  RailRule {}  RailClock {}
+    foot: PaperCorner {}  // anchored at the screen's bottom-left corner
 }
 ```
 
-- **What an image name can be:**
-  - a file;
-  - a cell of a sheet (`rect` in the sheet's pixels);
-  - a run of cells (`grid` cell size, `start`, `count`, counted left to right, top to bottom);
-  - a list of other names.
+`DockChrome.qml` is a `DockLayout { before: [ … ]; after: [ … ] }`.
 
-  Runs and lists are **frame lists**.
-- **Bare file names:** an element may name a file directly (`"image": "rail/x.png"`).
-- **Size and resolution:** the image fills the element's box whatever its pixel size. Paint at
-  6–10 px/mm. Each image is drawn once per size and cached.
+## SkinItem
 
-## Elements
+The base of every object. Its box is `size` in `units` (`"mm"`: life size on this output;
+`"px"`: logical px); `anchor` (same units) sits at the rail's working end, or the strip's centre
+with `place: "center"`. Baked art may reach `shadowMargin` px beyond the box.
 
-```json
-"elements": {
-  "vial": {
-    "size": [17, 9], "anchor": [16, 4.5],
-    "image": "vial",
-    "ink": { "mask": "vial.ink", "from": [8, 8.1], "to": [8, 0.9], "source": "volume" },
-    "triggers": { "click": "deal:levels", "scrollUp": "volume:+5", "scrollDown": "volume:-5", "middleClick": "mute" },
-    "tag": "Sound {{volume|percent}}"
-  }
-}
-```
+| Member | |
+| --- | --- |
+| `hand` | the hand it deals; it shows only while that hand is in `rail.hands` |
+| `shown` | its own condition (for example `ShellState.batteryPresent`) |
+| `tag` | hover text, and the accessible name (Tab, Enter and Space work) |
+| `hitShape` | `HitRect { rect }`, `HitCircle { center; radius }`, `HitPolygon { points; pad }`, in units; default: the box |
+| `hovered`, `pressed` | pointer state, for `Behavior`s and states |
+| `clicked(button)`, `wheelStep(direction)`, `doubleClicked()` | signals |
+| `run(action)` | runs an action with this object's screen and height |
+| `mm(x)`, `px(x)`, `unit`, `pxmm` | sizes |
 
-| Key | Meaning |
-|---|---|
-| `size` | `[w, h]` of the element's box. Required. |
-| `anchor` | The point that layouts place (the rail's working end, a slot's centre, the screen corner). Default `[0, 0]`. |
-| `image` | The default look. |
-| `frames` | `{source, images, min = 0, max = 1}`: the frame of a frame list chosen by a value. |
-| `states` | `[{when, image \| frames, ink, overlay, markers}]`: the first whose `when` holds replaces those keys. |
-| `ink` | Iron-gall ink (or `colour` from `inks`) poured into `mask` from `from` toward `to` by `source` (0–1); `bands: {when}` adds canary bands. |
-| `overlay` | Drawn over the ink. |
-| `markers` | `[{at, shape: "dot" \| "ring", radius, colour, when}]`: drawn status marks (shape carries meaning, not only colour). |
-| `regions` | Sub-buttons (below). |
-| `hit` | The element's own active area (below). Default: its drawn pixels. |
-| `triggers` | `click`, `rightClick`, `middleClick`, `doubleClick`, `scrollUp`, `scrollDown` → actions. |
-| `tag` | Hover text; a template (below). Default: the click action's label. |
-| `animations` | Below. |
-| `visibleWhen` | A condition; hidden when false. |
-| `dither`, `shadow` | The shell's finish, default on. |
+Animation, states and timing are plain QML (`Behavior`, `State`, `NumberAnimation`); see
+`skins/example/Seal.qml` and `Nib.qml`.
 
-**Conditions** (`when`, `visibleWhen`, `bands.when`, marker `when`):
-- `{source, eq | ne | lt | lte | gt | gte | in: [...] | truthy: true}`
-- `{all: [...]}`, `{any: [...]}`, `{not: {...}}`
+## Art
 
-**Templates:** `"Sound {{volume|percent}}"`. Filters are `percent`, `int`, `upper`, `lower`
-and `plural:word`.
+`FrameImage { file: Qt.resolvedUrl("elements/x.png"); count; frame }` shows one frame of a sheet
+(frames in one row). It picks `x-2x.png` when the art is drawn more than 1.25× larger in device
+px. Not `@2x`: Qt would read that name as a 2-DPR image and halve its size.
 
-### Regions
+`InkFill { file; level; steps: 24; variants; variant }` is a FrameImage whose frame follows an ink
+level; a sheet may hold several runs of `steps + 1` frames (the converter: discharging, charging
+with canary bands, held). `Marker { at; radius_; ring }` draws a canary dot or ring.
 
-```json
-"regions": [
-  { "id": "writing", "frames": { "source": "notifications.unread", "min": 0, "max": 6, "images": "writing" } },
-  { "id": "clip", "rect": [1.4, 7.2, 12, 12], "image": "paperclip", "triggers": { "click": "clipboard" }, "pad": 4 }
-]
-```
+The default skin's sheets are baked: `node scripts/skin/bake-elements.cjs` composes each look of
+each object from `scripts/skin/elements.json` with the shell's finish (dither, drop shadow), at 1×
+and 2× of the 24″ 1080p scale (1920/531 px per mm). Elsewhere the art is scaled.
 
-- **What a region is:** a look of its own (`image`, `frames`, `states`) drawn into `rect` (the
-  whole box if omitted), with its own `triggers`, `tag`, `hit`, `pad`, `animations` and
-  `visibleWhen`.
-- **Order:** the last listed is on top, both when drawing and when clicking.
-- **Decoration:** a region without triggers draws but takes no clicks.
-- **Unavailable actions:** a region whose actions can't do anything (clipboard history off,
-  tray off, a missing command) is neither drawn nor clickable.
+## ShellState
 
-### Active areas
-
-`hit` is one shape or a list; a point inside any of them counts:
-
-| Shape | |
-|---|---|
-| `{"rect": [x, y, w, h]}` | |
-| `{"circle": [cx, cy, r]}` | |
-| `{"polygon": [[x, y], ...]}` | |
-| `{"alpha": true}` | The drawn pixels (default). For a region: its own pixels grown by `pad` px (default 4). |
-| `{"mask": "imageName"}` | Opaque pixels of a mask image over the box (or the region's rect). |
-
-### Animations
-
-```json
-"animations": {
-  "hoverIn":  { "tween": { "x": 1.5 }, "duration": 140 },
-  "hoverOut": { "tween": {}, "duration": 180 },
-  "press":    { "tween": { "x": -1, "scale": 0.98 }, "duration": 60, "easing": "outCubic" },
-  "change:network.connecting": { "frames": "antenna.pulse", "fps": 12, "mode": "loop" }
-}
-```
-
-- **Events:** `hoverIn`, `hoverOut`, `press`, `release`, `click`, `load`, and `change:<value>`
-  (whenever that value changes). A region has its own events.
-- **Frames:** `{frames, fps = 12, mode}` shows a frame list over the look.
-  - `once` returns to the look; `hold` stays on the last frame; `loop` and `pingpong` repeat.
-  - Each frame is composed once and cached, so replaying is cheap.
-  - A loop keeps the element repainting: use it only while something is in progress.
-- **Tweens:** `{tween: {x, y, rotate, scale, opacity}, duration = 150, easing}` move the element
-  from wherever it is to that pose; `{}` is rest. They are transforms, not repaints.
-  - Easings: `linear`, `inOutQuad`, `outCubic`, `outBack`.
-  - On the element only (not regions).
-- **Transitions option:** when the Transitions reading option isn't "full", tweens jump to their
-  end, `hold` frames jump to the last, and others are skipped.
-
-## Values
-
-What conditions, frames, ink and templates can read:
-
-- **Audio:** `volume` (0 when muted), `volume.raw`, `muted`, `audio.available`, `mic.muted`
-- **Brightness:** `brightness`, `brightness.available`
-- **Battery:** `battery.present`, `battery.level`, `battery.state` (`absent`, `dis`, `chg`,
-  `held`, `full`)
-- **Network:** `network.connected`, `network.wired`, `network.stage` (0–4),
-  `network.connecting`, `network.failed`, `network.name`
-- **Bluetooth:** `bluetooth.available`, `bluetooth.on`, `bluetooth.connected` (count),
-  `bluetooth.connecting`
-- **Notifications:** `notifications.unread`, `notifications.dnd`
-- **Clipboard:** `clipboard.count`
-- **Media:** `media.present`, `media.playing`, `media.title`
-- **Time:** `time.hour`, `time.minute`
-- **Mode:** `mode` (`light` | `dark`)
+Typed properties, each with its own change signal:
+`volume` (0–1, 0 when muted), `volumeRaw`, `muted`, `audioAvailable`, `micMuted`, `brightness`,
+`brightnessAvailable`, `batteryPresent`, `batteryLevel`, `batteryState` (`absent` `chg` `full`
+`held` `dis`), `networkConnected`, `networkWired`, `networkStage` (0–4), `networkConnecting`,
+`networkFailed`, `networkName`, `bluetoothAvailable`, `bluetoothOn`, `bluetoothConnected`,
+`bluetoothConnecting`, `unread`, `dnd`, `clipboardCount`, `clipboardEnabled`, `mediaPresent`,
+`mediaPlaying`, `mediaTitle`, `mode`.
 
 ## Actions
 
-Triggers name actions; nothing else can run:
+`run("name")` or `run("name:arg")`: `launcher`, `deal:<group>`, `sheet:<sheet>`,
+`notifications`, `history`, `clipboard`, `tray`, `mute`, `volume:±n`, `brightness:±n`,
+`microphone`, `workspace:next|prev|<n>`, `minimize`, `lock`, `media`, `dnd`, `hide`,
+`command:<name>` (a command from `[commands.custom]`). `Actions.available(a)` and
+`Actions.label(a)` say whether it can run now and what it is called. `command:` is a
+convenience for your own commands, not a security boundary: a skin is code.
 
-| Action | Does |
-|---|---|
-| `launcher` | Toggle the launcher |
-| `deal:<hand>` | Deal a hand (config group or skin hand) |
-| `notifications`, `clipboard`, `tray` | Deal those sheets |
-| `sheet:<name>` | Open a sheet |
-| `mute`, `microphone` | Toggle |
-| `volume:+5`, `brightness:-10` | Change by percent |
-| `workspace:<n \| name \| next \| previous>` | Switch workspace |
-| `minimize`, `lock`, `dnd`, `hide` | |
-| `media:play \| next \| previous` | |
-| `command:<name>` | A named command from `[commands.custom]` in config.toml |
-| `none` | |
+## Cards.qml
 
-**Commands:** a skin can name a command but never supply one. Define the argv in config.toml:
-
-```toml
-[commands.custom]
-screenshot = ["grim", "-g", "0,0 1920x1080", "/tmp/shot.png"]
-```
-
-## Layouts
-
-**Rail.** The order of the strip, top to bottom:
-
-```json
-"rail": { "items": [
-  { "element": "tray", "place": "center" }, { "element": "nib" }, { "system": "rule" }, { "system": "workspaces" },
-  { "element": "vial", "hand": "levels" }, { "system": "hands" }, { "system": "spacer" },
-  { "system": "media" }, { "system": "clock" }, { "foot": "paper" } ] }
-```
-
-- **Element items:**
-  - `place: "end"` (default) puts the element's anchor at the rail's working end, on the slot's
-    centre line; `"center"` puts it on the strip's centre.
-  - `gap` sets the space around the element (px, default 2).
-  - An item with `hand` shows only while that hand is on the rail (`rail.hands` in config) and
-    present (a battery for `battery`).
-- **System parts:**
-  - `rule` and `spacer`;
-  - `workspaces`;
-  - `hands`: configured hands that have no element, shown as illuminated initials;
-  - `media`: where removable media open;
-  - `clock`.
-- **Foot:** one element anchored at the screen's bottom-left corner.
-
-**Dock.** `"dock": {"before": [...], "after": [...]}` lists element ids placed either side of
-the window entries, centred on their anchors in the dock's height. Elements in the dock deal
-from the top.
-
-## Cards and hands
-
-```json
-"cards": { "inkwell": { "title": "Ink", "face": "inkwell-face", "back": "inkwell-back", "value": "{{volume|percent}}",
-                        "orientation": "portrait", "chin": [0, 174, 154, 41], "ink": "#211C15" } },
-"hands": { "desk": { "label": "Desk", "cards": ["skin:inkwell", "volume"] } }
-```
-
-- **Naming:** skin cards are called `skin:<id>` wherever a hand lists them. That works in skin
-  hands and in config groups too (`config.toml` accepts `skin:` names).
-- **Faces and backs:** both are elements, scaled to the card's width. Clicks on the face run its
-  triggers (regions included). A `back` adds the dog-ear and right-click flip.
-- **Chin:** `chin` is the rect (element units) for the live title and value text. Set it to
-  `false` for no chin text.
-- **Hands:** skin hands are dealt by `deal:<name>`. A config group of the same name wins.
-
-## Removable media
-
-```json
-"devices": { "usb": { "image": "devices/usb.png", "envelope": "devices/usb-envelope.png" },
-             "tome": { "image": "devices/tome.png", "size": [120, 80], "like": "ereader", "name": "Tome" } },
-"media": { "seal": "devices/seal.png", "sealCracked": "devices/seal-cracked.png" }
-```
-
-- **Built-in kinds:** keep their geometry; your image fills their local rect: length × width
-  with the leading end (the end facing into the screen) on the right, as in the default
-  images.
-- **New kinds:** map one with `[media.overrides]` in config. It needs `size: [length, width]` in
-  mm, and `like` (the built-in pose to copy).
-- **Locked volumes:** `envelope` is drawn over a LUKS volume, and the seal on top.
-
-## Card art and pins
-
-```json
-"cardArt": { "volume": { "front": "cards/sound.png", "dark": "cards/sound-dark.png", "focus": [0.5, 0.4] } },
-"pins": { "firefox": "pins/firefox.png" }
-```
-
-- **Card art:** cropped to fill the card's art panel around `focus`, with the cards' dither
-  grain and level-driven luminance and saturation.
-- **Pins:** fill the launcher's plates. Keys are desktop ids from `launcher.pins`.
-
-## Materials
-
-```json
-"materials": {
-  "vellum": { "image": "materials/vellum.png", "size": [1024, 1024] },
-  "fray":   { "image": "materials/fray.png", "size": [64, 64] },
-  "sheen":  { "image": "materials/sheen.png", "size": [256, 1], "span": 1.2 },
-  "glint":  { "image": "materials/glint.png", "size": [64, 64] },
-  "patina": { "image": "materials/patina.png", "size": [512, 512] },
-  "ramps":  { "image": "materials/ramps.png", "size": [4, 7], "rows": ["gold", "silver", "pink", "green", "copper", "patina", "brass"], "lengths": [4, 4, 4, 4, 4, 3, 4] }
+```qml
+SkinCards {
+    SkinCardSpec { name: "inkwell"; title: "Ink"; value: Math.round(ShellState.volume * 100) + "%"
+                   face: Component { InkwellFace {} } }      // back: Component { … } makes it flippable
+    SkinHand { name: "desk"; label: "Desk"; cards: ["skin:inkwell", "volume"] }
 }
 ```
 
-`size` must match the image.
+A face fills the card and gets `card`; a click reaches the face's `SkinItem` under the pointer.
 
-| Field | Channel encoding | Notes |
-|---|---|---|
-| `vellum` | R: texture, 128 = flat | One texel per logical px, tiled. |
-| `fray` | R: edge threshold | Per logical-px grain cell; lower frays more. |
-| `sheen` | R: foil band strength ÷ 2; G: where glints may appear | Along the card diagonal, `span` long. |
-| `glint` | R: glint noise | |
-| `patina` | R: how far verdigris spreads; G: its tone | In logical px. |
-| `ramps` | One row per material; its tones, dark to light, from the left | |
+## skin.json
 
-**What stays code:** colours of the paper, ink and semantic states, which are config palette
-tokens. The dither matrix, card geometry, level and mark logic, bands, and the focus halo's
-shape are code too.
-
-## Selection: loupes, ring, initial
-
-`loupes` in skin.json, one entry per surface (`rail`, `dock`):
-
-```json
-"loupes": {"rail": {"size": [54, 57], "light": "materials/loupe-rail-light.png",
-  "dark": "materials/loupe-rail-dark.png", "glass": "materials/loupe-rail-glass.png",
-  "ring": {"light": "materials/ring-rail-light.png", "dark": "materials/ring-rail-dark.png"}}}
-```
-
-- `size` is logical px (diameter, diameter + the contact shadow). Draw at 4× for crisp HiDPI.
-- `light` / `dark`: the loupe (brass, glass shading, shadow) per mode, drawn over the content.
-- `glass`: the mask. Alpha decides where the magnified content shows (white, opaque = glass);
-  anything outside is clipped. It need not be a circle.
-- `ring`: the fallback selection indicator, used instead of the loupe with Accessibility's
-  reduced effects (no magnification, no glass, solid inner ring for contrast).
-- `initial`: the gold ground behind a hand's letter when the hand has no element of its own.
-
-## Not yet images
-
-- **Focus halo** (`Halo.js`) and the card band pattern: still painted; colours come from the ramps.
-- **Workspace numerals, clock, initial letters:** live text, not art.
-
-## Verify on hardware (3)
-
-- `?v=` cache-busting on `file://` image URLs under Qt.
-- 9-argument `drawImage` (sheet cells) in QML's Context2D.
-- `Canvas.unloadImage` after rasterising.
-- The first frame painting the procedural stand-ins before the material images install.
-- `onImageLoaded` repaints.
-- Material decoding in blocks on the rail's canvas.
+`devices` (removable-media art and, for kinds you add, `size` and `like`), `media` (`seal`,
+`sealCracked`), `materials` (vellum, fray, sheen, glint, patina, ramps images), `loupes`,
+`initial`, `cardArt` (`{front, dark?, focus?}` per card kind), `pins` (launcher pin art).
+Paths are relative to the skin folder.

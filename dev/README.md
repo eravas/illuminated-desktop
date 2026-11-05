@@ -27,9 +27,9 @@ It builds unmodified Mango/mmsg 0.18.4 with Xwayland disabled and copies develop
 binaries into ignored `dev/`. The build directory is disposable. Do not install those
 binaries over a working compositor. Pointer helper sources/protocol are included.
 
-`test-all.sh` runs syntax/unit/strict-lint validation, then nine fresh private
+`test-all.sh` runs syntax/unit/strict-lint validation, then ten fresh private
 D-Bus + headless Sway sessions: foundation, artifacts, isolated feature smoke,
-audio, live reload/configuration, Mango adapter protocol, greeter protocol, v3
+audio, QML skins (`skin`), live reload/configuration, Mango adapter protocol, greeter protocol, v3
 configuration (`single-config`) and the Session deck (`session-ui`).
 Runtime failures stop the runner, record a nonzero suite exit and leave subsequent
 suites marked NOT RUN. Strict lint remains separately recorded as exit 1; a

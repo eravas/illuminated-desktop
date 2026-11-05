@@ -14,7 +14,7 @@ import "../materials/DeviceGeometry.js" as Geo
 // released. Permanent (space held by a Reservation) or auto-hide: a ~300 ms dwell in the
 // top-right eighth of the top edge reveals it; it hides after the pointer leaves, but not
 // during a Shift selection. It takes keyboard focus while hovered so it can see Shift.
-// The skin may add its own elements before and after the windows (docs/SKINS.md, "dock").
+// The skin may add its own objects before and after the windows (its DockChrome.qml).
 PanelWindow {
     id: root
     anchors { top: true; left: true; right: true }
@@ -33,7 +33,13 @@ PanelWindow {
     property var pending: []                    // window ids, in click order
     readonly property var windows: DesktopState.windows
     readonly property real pxmm: Geo.pxPerMm(Settings.mediaScale, screen ? screen.physicalPixelDensity : 0, screen ? screen.devicePixelRatio : 1)
-    readonly property var chrome: SkinStore.manifest.dock || ({})
+    readonly property alias tag: hoverTag
+    // The skin's DockChrome.qml: a DockLayout whose `before` and `after` objects sit in the strip.
+    Loader {
+        id: chrome
+        source: SkinStore.qml("DockChrome.qml")
+        onLoaded: { item.dock = root; before.place(item.before); after.place(item.after); }
+    }
     onAutoHideChanged: revealed = !autoHide
     // When hidden only the trigger zone takes input: the top-right eighth, 4 px deep.
     mask: Region { item: root.revealed ? strip : trigger }
@@ -73,8 +79,8 @@ PanelWindow {
             anchors.fill: parent
             focus: true
             Keys.onReleased: function(event) { if (event.key === Qt.Key_Shift && root.pending.length) root.apply(); }
-            Chrome { id: before; items: root.chrome.before || []; pxmm: root.pxmm; tag: hoverTag; screen: root.screen; anchors { left: parent.left; leftMargin: 12; verticalCenter: parent.verticalCenter } }
-            Chrome { id: after; items: root.chrome.after || []; pxmm: root.pxmm; tag: hoverTag; screen: root.screen; anchors { right: parent.right; rightMargin: 12; verticalCenter: parent.verticalCenter } }
+            Chrome { id: before; anchors { left: parent.left; leftMargin: 12; verticalCenter: parent.verticalCenter } }
+            Chrome { id: after; anchors { right: parent.right; rightMargin: 12; verticalCenter: parent.verticalCenter } }
             Flickable {
                 id: list
                 anchors { fill: parent; leftMargin: 18 + (before.width ? before.width + 8 : 0); rightMargin: 18 + (after.width ? after.width + 8 : 0) }
@@ -112,31 +118,13 @@ PanelWindow {
             }
         }
     }
-    // Skin elements in a row, each centred on its anchor in the dock's height.
+    // The skin's objects in a row, each centred in the dock's height.
     component Chrome: Row {
-        id: chromeRow
-        property var items: []
-        property real pxmm: 3.6          // inline components cannot see the window's ids: passed in
-        property var tag: null
-        property var screen: null
         spacing: 8
         height: Settings.railWidth
-        Repeater {
-            model: chromeRow.items
-            Item {
-                id: cell
-                required property var modelData
-                readonly property string elementId: typeof modelData === "string" ? modelData : modelData.element || ""
-                width: el.width - 2 * el.margin; height: chromeRow.height
-                SkinElement {
-                    id: el
-                    elementId: cell.elementId
-                    pxmm: chromeRow.pxmm; tag: chromeRow.tag
-                    context: ({screen: chromeRow.screen})
-                    x: (cell.width - width) / 2
-                    y: cell.height / 2 - anchorY
-                }
-            }
+        function place(items) {
+            const row = this;
+            for (const item of items) { item.parent = row; item.y = Qt.binding(() => (row.height - item.height) / 2); }
         }
     }
 }

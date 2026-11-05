@@ -1,5 +1,23 @@
+module qs.skin
 singleton ShellState 1.0 ShellState.qml
 singleton SkinStore 1.0 SkinStore.qml
 singleton Actions 1.0 Actions.qml
-SkinElement 1.0 SkinElement.qml
+SkinItem 1.0 SkinItem.qml
+FrameImage 1.0 FrameImage.qml
+InkFill 1.0 InkFill.qml
+Marker 1.0 Marker.qml
+HitRect 1.0 HitRect.qml
+HitCircle 1.0 HitCircle.qml
+HitPolygon 1.0 HitPolygon.qml
+RailLayout 1.0 RailLayout.qml
+RailRule 1.0 RailRule.qml
+RailWorkspaces 1.0 RailWorkspaces.qml
+RailHands 1.0 RailHands.qml
+RailSpacer 1.0 RailSpacer.qml
+MediaBay 1.0 MediaBay.qml
+RailClock 1.0 RailClock.qml
+DockLayout 1.0 DockLayout.qml
 SkinCard 1.0 SkinCard.qml
+SkinCards 1.0 SkinCards.qml
+SkinCardSpec 1.0 SkinCardSpec.qml
+SkinHand 1.0 SkinHand.qml

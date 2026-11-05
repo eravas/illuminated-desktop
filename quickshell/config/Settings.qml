@@ -4,7 +4,6 @@ import Quickshell
 import Quickshell.Io
 import "defaults.js" as Packaged
 import "Reading.js" as Reading
-import "../skin/Registry.js" as SkinRegistry
 // Reads configuration; never defines defaults. Values come from, highest first:
 //   ui.json (choices made inside the shell, unless config.toml pins the key)
 //   resolved.json (config.toml merged over defaults by `illuminated apply`)
@@ -54,9 +53,9 @@ Singleton {
     }
     function color(name) { const value = option("palettes." + appearance + "." + name, undefined); return value !== undefined ? value : lookup(defaults, "palettes.dark." + name); }
     // Registry accessors: cards and groups.
-    // Config first; a skin may add cards and hands of its own (docs/SKINS.md).
-    function card(kind) { return option("cards." + kind, null) || SkinRegistry.card(kind) || ({}); }
-    function group(name) { return option("groups." + name, null) || SkinRegistry.hand(name); }
+    // Config only; SkinStore.card/group add a skin's own (docs/SKINS.md, "Cards.qml").
+    function card(kind) { return option("cards." + kind, null) || ({}); }
+    function group(name) { return option("groups." + name, null); }
     readonly property var groups: option("groups", ({}))
     Process { command: ["mkdir", "-p", root.uiPath.substring(0, root.uiPath.lastIndexOf("/"))]; running: !root.readOnly && root.uiPath !== ""; onExited: function(code) { root.directoryReady = code === 0; } }
     FileView {

@@ -4,6 +4,7 @@ import Quickshell.Io
 import "compositors"
 import "config"
 import "rail"
+import "skin"
 ShellRoot {
     id: root
     DesktopContext { id: desktop; shellScreen: Quickshell.screens[0] }
