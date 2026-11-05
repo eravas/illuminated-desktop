@@ -38,8 +38,8 @@ the foundation and artifacts failures track GUI-thread paint time (Phase 5 measu
 | Check | Result |
 | --- | --- |
 | Node tests | 61/61 (the 100+ per-file structure tests are replaced by fatal qmllint `[import]` checks) |
-| Python unittest | 83/83 |
-| qmllint (non-strict) | exit 0, 82 warnings (Quickshell type-metadata gaps); `[import]` warnings are now fatal |
+| Python unittest | 84/84 |
+| qmllint (non-strict) | exit 0, 83 warnings (Quickshell type-metadata gaps); `[import]` warnings are now fatal |
 | artifacts, smoke, audio, skin (new), reload, compositor, greeter, single-config, session-ui | pass |
 | foundation | **fail** at its last step (launcher does not get the keyboard under Sway after a hand and an output hotplug; see Phase 5); the launcher-reopen loop that failed at baseline now passes every run |
 
