@@ -26,10 +26,10 @@ def errors(user):
 class Merge(unittest.TestCase):
     def test_partial_table_override_keeps_siblings(self):
         # v2 bug: overriding one menu wiped every other group.
-        values = resolve({"groups": {"session": {"cards": ["lock", "poweroff"]}}}).values
-        self.assertEqual(values["groups"]["session"]["cards"], ["lock", "poweroff"])
+        values = resolve({"groups": {"power": {"cards": ["lock", "poweroff"]}}}).values
+        self.assertEqual(values["groups"]["power"]["cards"], ["lock", "poweroff"])
         self.assertEqual(values["groups"]["sound"]["cards"], ["volume", "microphone", "outputs"])
-        self.assertEqual(values["groups"]["session"]["glyph"], "⏻")
+        self.assertEqual(values["groups"]["power"]["glyph"], "P")
 
     def test_arrays_replace(self):
         values = resolve({"rail": {"hands": ["power"]}}).values
@@ -82,13 +82,14 @@ class Validation(unittest.TestCase):
             self.assertFalse(set(palette) & set(defaults["semantic"]), "a semantic colour is mode-dependent")
         self.assertEqual(set(defaults["palettes"]["dark"]), set(defaults["palettes"]["light"]))
 
-    def test_menu_entries_cannot_nest(self):
-        self.assertError({"cards": {"poweroff": {"alternatives": ["suspend"]}}}, "cards.poweroff.alternatives", "itself a menu")
+    def test_card_behaviour_is_not_configuration(self):
+        # Orientation, interaction and Sleep's menu live in quickshell/artifacts/kinds/.
+        for key in ("orientation", "interaction", "alternatives"):
+            self.assertError({"cards": {"volume": {key: "toggle"}}}, f"cards.volume.{key}", "unknown key")
 
     def test_default_session_deck(self):
         values = resolve({}).values
-        self.assertEqual(values["groups"]["session"]["cards"], ["suspend", "poweroff", "reboot"])
-        self.assertEqual(values["cards"]["suspend"]["alternatives"], ["lock", "logout"])
+        self.assertEqual(values["groups"]["power"]["cards"], ["suspend", "poweroff", "reboot"])
         self.assertFalse(values["cards"]["suspend"]["confirm"])
         self.assertFalse(values["cards"]["lock"]["confirm"])
         for kind in ("poweroff", "reboot", "logout"):
@@ -142,14 +143,13 @@ class Validation(unittest.TestCase):
         self.assertError({"binds": {"SUPER+X": "cards nowhere"}}, "binds.SUPER+X", "unknown group")
         self.assertError({"binds": {"HYPER+X": "launcher"}}, "binds.HYPER+X", "unknown modifier")
         self.assertError({"binds": {"SUPER+X": "rm -rf /"}}, "binds.SUPER+X", "unknown action")
-        self.assertError({"cards": {"poweroff": {"alternatives": ["volume"]}}}, "cards.poweroff.alternatives")
         self.assertError({"groups": {"empty": {"cards": []}}}, "groups.empty", "needs cards or a sheet")
 
     def test_host_errors_are_found_on_every_machine(self):
         self.assertError({"host": {"elsewhere": {"typo": 1}}}, "host.elsewhere.typo", "unknown key")
 
     def test_large_group_warns_but_resolves(self):
-        result = resolve({"groups": {"session": {"cards": ["lock", "suspend", "poweroff", "reboot"]}}})
+        result = resolve({"groups": {"power": {"cards": ["lock", "suspend", "poweroff", "reboot"]}}})
         self.assertTrue(any(d.level == "warning" and "paginate" in d.message for d in result.diagnostics))
 
     def test_toml_syntax_error_has_location(self):
@@ -349,3 +349,11 @@ class V7Options(unittest.TestCase):
                      {"deck": {"aligned": True}}, {"deck": {"rotation": 2}}, {"confirm": {"timeout": 8000}}):
             with self.assertRaises(c.ConfigError, msg=gone):
                 self.resolve(gone)
+
+
+class ReadingOptions(unittest.TestCase):
+    def test_reading_js_options_are_generated_from_the_schema(self):
+        # One source for the option values: config/defaults.toml. Regenerate with
+        # `illuminated defaults --write-json` after changing schema.rules.
+        text = (paths.shell_dir() / "config/Reading.js").read_text()
+        self.assertIn(config.reading_options_block(), text)

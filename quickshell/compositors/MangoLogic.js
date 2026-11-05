@@ -1,6 +1,6 @@
 function context(monitors, allTags, clients, name, allOutputs, healthy) {
     const monitor = monitors.find(m => m.name === name);
-    if (!monitor || !healthy) return {ready:false, modelKind:"tags", monitorName:name, monitorFocused:false, spaces:[], selection:[], title:"Waiting for Mango"};
+    if (!monitor || !healthy) return {ready:false, modelKind:"tags", monitorName:name, monitorFocused:false, spaces:[], selection:[]};
     const groups = allTags.filter(g => allOutputs || g.monitor === name);
     const spaces = [];
     groups.forEach(group => (group.tags || []).forEach(tag => {
@@ -10,8 +10,7 @@ function context(monitors, allTags, clients, name, allOutputs, healthy) {
             urgent:!!tag.is_urgent, count:tag.client_count, toplevels:{values:members}});
     }));
     const selected = (monitor.active_tags || []).slice();
-    return {ready:true, modelKind:"tags", monitorName:name, monitorFocused:!!monitor.active, spaces:spaces, selection:selected, overview:selected.indexOf(0) >= 0,
-        title:monitor.active && monitor.active_client && monitor.active_client.title ? monitor.active_client.title : "Tags " + selected.join(" + ")};
+    return {ready:true, modelKind:"tags", monitorName:name, monitorFocused:!!monitor.active, spaces:spaces, selection:selected, overview:selected.indexOf(0) >= 0};
 }
 function selection(current, tag, extend) {
     if (!Number.isInteger(tag) || tag < 1 || tag > 31) return [];

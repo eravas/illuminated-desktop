@@ -124,10 +124,14 @@ test('power set: Sleep is mode-biased with its own ink; Shut Down solid red; Reb
 });
 
 test('session card modes and wording', () => {
-  assert.equal(m.sessionMode(defaults.cards.suspend), 'menu');
-  assert.equal(m.sessionMode(defaults.cards.poweroff), 'confirm');
-  assert.equal(m.sessionMode(defaults.cards.reboot), 'confirm');
-  assert.equal(m.sessionMode(defaults.cards.lock), 'act');
+  // As ServiceCard builds its spec: the kind's behaviour (Kinds.js) over the config entry.
+  const k = {}; vm.createContext(k);
+  vm.runInContext(fs.readFileSync('quickshell/artifacts/kinds/Kinds.js', 'utf8').replace('.pragma library', ''), k);
+  const spec = kind => ({...defaults.cards[kind], ...k.meta(kind)});
+  assert.equal(m.sessionMode(spec('suspend')), 'menu');
+  assert.equal(m.sessionMode(spec('poweroff')), 'confirm');
+  assert.equal(m.sessionMode(spec('reboot')), 'confirm');
+  assert.equal(m.sessionMode(spec('lock')), 'act');
   assert.equal(m.sentence('Log Out') + '?', 'Log out?');
   assert.equal(m.sentence('Shut Down'), 'Shut down');
 });

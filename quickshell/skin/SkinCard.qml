@@ -1,59 +1,51 @@
+pragma ComponentBehavior: Bound
 import QtQuick
 import "../artifacts"
-import "../config"
 import "../theme"
-import "Skin.js" as Skin
-// A card a skin defines (docs/SKINS.md, "Cards and hands"): its face and back are skin
-// elements scaled to the card, its chin carries live text (title and a value template over shell
-// values), and clicks run the face's triggers (regions included). A back makes it flippable
-// with the dog-ear (and right-click). Same interface as ServiceCard for the deck.
+// A card a skin defines (SkinCardSpec in its Cards.qml): the skin's face and back components,
+// and a chin with the title and live value. Same interface as ServiceCard for the deck.
 ArtifactCard {
     id: root
-    required property string kind           // "skin:<id>"
+    required property string kind           // "skin:<name>"
     readonly property string cardId: kind.indexOf("skin:") === 0 ? kind.slice(5) : kind
-    readonly property var spec: (SkinStore.manifest.cards || {})[cardId] || ({})
-    readonly property var values: ShellState.values
-    decorated: false
-    frontInset: 0; backInset: 0
-    dogEar: !!spec.back
-    Accessible.name: (spec.title || cardId) + (spec.value ? " " + Skin.format(spec.value, values) : "")
-    onActivated: if (faceElement) { const t = faceElement.targetAt(pressX, pressY) || "#"; faceElement.trigger("click", t); }
-    property SkinElement faceElement: null
+    readonly property var spec: SkinStore.skinCards[cardId] || null
+    aspectRatio: spec && spec.orientation === "landscape" ? 7 / 5 : 5 / 7
+    dogEar: !!spec && !!spec.back
+    Accessible.name: (spec ? spec.title : cardId) + (spec && spec.value ? " " + spec.value : "")
+    // Clicks: the card takes the pointer (selection, drags); pass a click to the face's object there.
+    property Item faceItem: null
+    onActivated: {
+        if (!faceItem) return;
+        const hit = faceItem.childAt(pressX, pressY);
+        const target = hit && hit.clicked ? hit : faceItem.clicked ? faceItem : null;
+        if (target) target.clicked(Qt.LeftButton);
+    }
     front: Component {
         Item {
-            SkinElement {
-                id: face
-                elementId: root.spec.face || ""
-                fitWidth: root.width - 2 * margin
-                x: 0; y: 0
-                Component.onCompleted: root.faceElement = face
-                // Clicks come through the card (it takes the pointer for selection and drags).
-                enabled: false
+            id: face
+            Loader {
+                anchors.fill: parent
+                sourceComponent: root.spec ? root.spec.face : null
+                onLoaded: { if (item.card !== undefined) item.card = root; root.faceItem = item; }
             }
-            // Chin: title left, value right, in the card face; rect in the element's units.
-            Item {
-                readonly property var r: root.spec.chin || [0, 0.81 * (face.valid ? face.element.size[1] : 1), face.valid ? face.element.size[0] : 1, 0.19 * (face.valid ? face.element.size[1] : 1)]
-                x: face.margin + r[0] * face.unitScale; y: face.margin + r[1] * face.unitScale
-                width: r[2] * face.unitScale; height: r[3] * face.unitScale
-                visible: root.spec.chin !== false
+            Item {   // chin: title left, value right
+                visible: !!root.spec && root.spec.chin
+                y: face.height * 0.81; width: face.width; height: face.height * 0.19
+                readonly property color ink: root.spec && root.spec.ink.a > 0 ? root.spec.ink : Theme.semantic("onFill")
                 Text {
                     anchors { left: parent.left; leftMargin: parent.height * 0.25; verticalCenter: parent.verticalCenter }
-                    text: root.spec.title || root.cardId; textFormat: Text.PlainText
+                    text: root.spec ? root.spec.title : ""; textFormat: Text.PlainText
                     font.family: Theme.cardFamily; font.bold: Theme.cardBold; font.pixelSize: Math.max(10, parent.height * 0.5)
-                    color: root.spec.ink || Theme.semantic("onFill")
+                    color: parent.ink
                 }
                 Text {
                     anchors { right: parent.right; rightMargin: parent.height * 0.25; verticalCenter: parent.verticalCenter }
-                    text: Skin.format(root.spec.value || "", root.values); textFormat: Text.PlainText
+                    text: root.spec ? root.spec.value : ""; textFormat: Text.PlainText
                     font.family: Theme.cardFamily; font.bold: Theme.cardBold; font.pixelSize: Math.max(10, parent.height * 0.5)
-                    color: root.spec.ink || Theme.semantic("onFill")
+                    color: parent.ink
                 }
             }
         }
     }
-    back: spec.back ? backFace : null
-    Component {
-        id: backFace
-        SkinElement { elementId: root.spec.back || ""; fitWidth: root.width - 2 * margin; context: ({}) }
-    }
+    back: spec && spec.back ? spec.back : null
 }

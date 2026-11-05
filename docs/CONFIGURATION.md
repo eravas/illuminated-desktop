@@ -34,8 +34,8 @@ too big for one page, are also shown in the Herbarium sheet and in
 | in-shell choices | `~/.config/illuminated/ui.json` | the Herbarium sheet |
 
 Later layers win. **Tables merge key by key; arrays and scalars replace.**
-Overriding `groups.session.cards` changes only that list. Every other group,
-and the session group's glyph, stay as they are.
+Overriding `groups.power.cards` changes only that list. Every other group,
+and the power group's glyph, stay as they are.
 
 A key set in `config.toml` is *pinned*. The shell will not override it from the
 Herbarium sheet; it tells you to change it in the file instead. A choice made in
@@ -76,7 +76,7 @@ hands = ["levels", "connections", "sound", "power"]   # hands dealt from the rai
 [clock]
 timeFormat = "h:mm ap"
 
-[groups.session]
+[groups.power]
 cards = ["suspend", "poweroff"]      # drop Reboot; Sleep's back still offers Lock and Log Out
 
 [cards.notifications]
@@ -112,14 +112,13 @@ rail.width = 56
   `settings`), and `show`: `always`, `battery` (only on machines with a battery)
   or `player` (only while a media player exists). A group is reachable from
   `rail.hands`, `[binds]` and `illuminated cards <name>`.
-- **`[cards.<kind>]`** are the built-in card kinds. Their behaviour is code, so
-  you can't add kinds. You can change their `title`, `orientation`, `sheet`,
-  `interaction`, a session card's `alternatives` and `confirm`. A session card
-  with `alternatives` is a menu: a click turns it to a list of itself plus those
-  entries (Sleep → Sleep, Lock, Log Out; entries cannot be menus themselves).
-  Without them, `confirm = true` turns the card to "Confirm?" (Shut Down, Reboot)
-  and `false` acts on click. In a menu, an entry with `confirm = true` asks
-  inline ("Log out?").
+- **`[cards.<kind>]`** are the built-in card kinds. What a kind is and does
+  (its orientation, what a click and a drag do, Sleep's menu of Sleep, Lock and
+  Log Out) is code in `quickshell/artifacts/kinds/`, so you can't add kinds or
+  turn a slider into a toggle. You can change their `title`, `short`, `sheet`
+  and a session card's `confirm`: `true` turns Shut Down or Reboot to
+  "Confirm?", `false` acts on click; in Sleep's menu, an entry with
+  `confirm = true` asks inline ("Log out?").
   `short` is an optional shorter label: a chin or back header uses it only
   when the full title would not fit (Mic, Letters, Quiet, Net by default).
 - **Colours**: `[palettes.<mode>]` holds material colours, which change per mode;

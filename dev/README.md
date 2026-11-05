@@ -27,9 +27,9 @@ It builds unmodified Mango/mmsg 0.18.4 with Xwayland disabled and copies develop
 binaries into ignored `dev/`. The build directory is disposable. Do not install those
 binaries over a working compositor. Pointer helper sources/protocol are included.
 
-`test-all.sh` runs syntax/unit/strict-lint validation, then nine fresh private
+`test-all.sh` runs syntax/unit/strict-lint validation, then ten fresh private
 D-Bus + headless Sway sessions: foundation, artifacts, isolated feature smoke,
-audio, live reload/configuration, Mango adapter protocol, greeter protocol, v3
+audio, QML skins (`skin`), live reload/configuration, Mango adapter protocol, greeter protocol, v3
 configuration (`single-config`) and the Session deck (`session-ui`).
 Runtime failures stop the runner, record a nonzero suite exit and leave subsequent
 suites marked NOT RUN. Strict lint remains separately recorded as exit 1; a
@@ -57,6 +57,23 @@ claimed. NetworkManager/BlueZ/UPower/logind/polkit/backlight are absent.
 MPRIS/tray peers, Mango server and greetd authentication are explicit fixtures;
 their real transports/native clients run, but they are not real user applications,
 a Mango compositor or PAM. Session actions are harmless marker substitutes.
+
+## Docker-less cloud host (chroot)
+
+On a host without a Docker daemon but with root (for example a Claude Code cloud
+container, Ubuntu), build the same userspace as a directory and run in it:
+
+```sh
+sudo bash dev/cloud-setup.sh            # Arch bootstrap + pinned archive + Mango/mmsg; idempotent
+sudo bash dev/run-chroot.sh bash dev/test-all.sh
+```
+
+`cloud-setup.sh` is self-contained so it can be the environment's setup script.
+`tests/test_cloud_runtime.py` keeps its archive date and package list equal to the
+Dockerfile's. `run-chroot.sh` gives the same contract as `run.sh`: new mount, PID and
+network namespaces (no network), the runtime read-only, private tmp/run/shm/home,
+the project read/write at `/project`, UID 1000. It builds the pointer helper on
+first use. Mango and mmsg are in the runtime's `/usr/local/bin`.
 
 ## Prepared cloud rootfs / Docker VFS fallback
 

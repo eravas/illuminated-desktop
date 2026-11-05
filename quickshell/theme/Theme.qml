@@ -28,16 +28,15 @@ Singleton {
     readonly property color urgent: Settings.color("urgent")
     readonly property color focusCore: Settings.color("focusCore")
     readonly property color focusFringe: Settings.color("focusFringe")
-    readonly property int inset: Settings.inset
-    readonly property int gap: Settings.spacing
-    readonly property int radius: Settings.radius
+    readonly property int gap: Settings.option("dimensions.spacing")
+    readonly property int radius: Settings.option("dimensions.radius")
     readonly property int motionDuration: Settings.reducedMotion ? 0 : Settings.option("motion.lift")
     // Display face (card, rail and dock text): Pirata One, Germania One (Legibility) or the
     // sans (Accessibility). Blackletter faces have one weight; only the sans is set bold.
     readonly property string face: Settings.reading.face
     readonly property string cardFamily: face === "sans" ? Settings.fontFamily : face === "germania" ? Settings.legibilityFamily : Settings.blackletterFamily
     readonly property bool cardBold: face === "sans"
-    readonly property string serifFamily: Settings.serifFamily
+    readonly property string serifFamily: Settings.option("typography.serif")
     readonly property real typeScale: Settings.typeScale
     function numeral(n) { return Reading.numeral(n, Settings.reading.numerals); }
     // Material texture amplitude per mode, scaled by the texture option; text-bearing
@@ -48,7 +47,7 @@ Singleton {
     }
     // Rail and dock wash: accent mixed toward the vellum, gated so mode ink passes 4.5:1.
     readonly property var wash: Settings.reading.wash === "off" ? null : VellumPaint.washTone(String(paper), Settings.accent, String(ink), mode, Settings.washStrength, textureAmp(true))
-    readonly property string colourVision: Settings.colourVision
+    readonly property string colourVision: Settings.option("appearance.colourVision")
     // Scoped mode inversion: a material role resolved against the opposite mode.
     function material(name, inverted) {
         const value = Settings.option("palettes." + (inverted ? otherMode : mode) + "." + name, null);

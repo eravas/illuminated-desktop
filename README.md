@@ -13,8 +13,9 @@ acceptance. The [feature inventory](docs/FEATURES.md) includes limitations.
 ## The interface
 
 A permanent left rail and a top dock (v7) replace the bar; the rail's illuminated initials deal hands of physical cards sideways onto the desk.
-Cards travel down one straight lane from above the screen; the leading card
-travels farthest. Rotation-aware separation, pagination, selection lift, animated
+Cards travel in from the left in one row at the dealing initial's height (the
+screen's middle when dealt over IPC or with the rail off); the leading card travels
+farthest. Rotation-aware separation, pagination, selection lift, animated
 vertical-axis flipping, keyboard navigation and interactive backs are shared
 mechanics. Volume and brightness are landscape cards with horizontal live fills
 and horizontal dragging. Other cards retain the 5:7 format. Click and drag are

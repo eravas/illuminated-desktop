@@ -76,3 +76,21 @@ test('putImageData always passes the dirty rectangle (Qt 6.12 ignores the 3-argu
   for (const file of files) for (const m of fs.readFileSync(file, 'utf8').matchAll(/putImageData\(([^()]*(?:\([^()]*\))*[^()]*)\)/g))
     assert.equal(m[1].split(',').length, 7, `${file}: ${m[0]}`);
 });
+
+// Quickshell resolves a directory import (`import "kinds"`) reliably only through a qmldir:
+// without one, the same file loads from one entry point and is "not a type" when shell.qml
+// is reached through a Loader (found with artifacts/kinds, single-config suite).
+test('every directory imported by path has a qmldir listing its components', () => {
+  for (const file of qmlFiles('quickshell')) {
+    const text = fs.readFileSync(file, 'utf8');
+    for (const m of text.matchAll(/^import\s+"([^"]+)"\s*$/gm)) {
+      if (m[1].endsWith('.js')) continue;
+      const dir = path.join(path.dirname(file), m[1]);
+      const qmldir = path.join(dir, 'qmldir');
+      assert(fs.existsSync(qmldir), `${file}: ${m[1]} has no qmldir`);
+      const listed = fs.readFileSync(qmldir, 'utf8');
+      for (const qml of fs.readdirSync(dir).filter(n => n.endsWith('.qml') && /^[A-Z]/.test(n)))
+        assert(listed.includes(qml), `${qmldir} does not list ${qml}`);
+    }
+  }
+});

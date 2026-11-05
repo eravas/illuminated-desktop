@@ -65,18 +65,32 @@ def shell(path, log, process):
         assert result.returncode == 0, result.stdout + result.stderr
     def status():
         return json.loads(command('quickshell', 'ipc', '-p', path, 'call', 'shell', 'status'))
+    import re as _re
+    def layer_surfaces(namespace):   # (created, destroyed) layer surfaces of a namespace so far
+        # Wayland reuses object ids, so a destroy counts only after its own creation.
+        text = log.read_text(); made = gone = 0
+        for m in _re.finditer(r'new id zwlr_layer_surface_v1#(\d+),[^\n]*"' + namespace + '"', text):
+            made += 1
+            nxt = _re.search(r'zwlr_layer_surface_v1#' + m.group(1) + r'\.destroy\(\)', text[m.end():])
+            gone += nxt is not None
+        return made, gone
+    def launcher_surfaces(): return layer_surfaces('illuminated-launcher')
     for _ in range(3):
-        before = log.read_text().count('"illuminated-launcher"')
+        before = launcher_surfaces()[0]
         ipc('launcher')
-        wait(lambda: log.read_text().count('"illuminated-launcher"') > before, 'launcher not reopened')
+        wait(lambda: launcher_surfaces()[0] > before, 'launcher not reopened')
         command('wtype', '-s', '150', '-k', 'Escape')
-        time.sleep(.65)
+        # Closed means the surface is gone (after the closing animation), not a fixed delay.
+        wait(lambda: launcher_surfaces()[1] == launcher_surfaces()[0], 'Escape did not close the launcher')
     # A hand opened over IPC; hide dismisses it. (Replaces the v2 Controls window probe.)
     ipc('cards', 'levels')
     wait(lambda: status()['artifacts'] == 'levels', 'cards IPC did not deal a hand')
     capture('shell-hand.png')
     ipc('hide')
     wait(lambda: status()['artifacts'] == '', 'hide did not dismiss the hand')
+    # Until the hand has retracted its surface keeps the keyboard; Sway does not pass the focus to
+    # a layer surface mapped meanwhile (Inspiron checklist: launcher right after a hand).
+    wait(lambda: layer_surfaces('illuminated-cards')[0] == layer_surfaces('illuminated-cards')[1], 'the hand did not retract')
     # Duplicate start must exit while the original remains alive.
     sp.run(['quickshell', '-p', path, '--no-duplicate'], timeout=5, check=True, capture_output=True)
     assert process.poll() is None
@@ -97,8 +111,17 @@ def shell(path, log, process):
     wait(lambda: 'HEADLESS-2' not in command('swaymsg', '-t', 'get_outputs', '-r') or not any(o['active'] for o in json.loads(command('swaymsg', '-t', 'get_outputs', '-r')) if o['name'] == 'HEADLESS-2'), 'output not disabled')
     wait(lambda: 'zwlr_layer_surface_v1#' + surface + '.destroy()' in log.read_text(), 'removed output retained its rail surface')
     assert 'set_exclusive_zone(72)' in log.read_text()   # rail reservation: inset 3 + 64 + 5
-    # A safe real desktop entry writes a marker. Search/Enter executes it.
-    ipc('toggleLauncher')
+    # A safe real desktop entry writes a marker. Search/Enter executes it, once the launcher has
+    # the keyboard (keys typed before the compositor's enter event are lost).
+    def launcher_focused():
+        text = log.read_text()
+        made = list(_re.finditer(r'new id zwlr_layer_surface_v1#\d+, (wl_surface#\d+),[^\n]*"illuminated-launcher"', text))
+        return bool(made) and _re.search(r'wl_keyboard#\d+\.enter\(\d+, ' + made[-1].group(1) + r'\b', text[made[-1].end():]) is not None
+    # Sway leaves seat focus on the output just disabled; give it back to the remaining one, or
+    # no layer surface gets the keyboard.
+    command('swaymsg', 'focus output HEADLESS-1')
+    ipc('launcher')
+    wait(launcher_focused, 'launcher took the keyboard', seconds=25)   # after output hotplug: new chrome paints first
     command('wtype', '-s', '150', 'Illuminated Integration Probe')
     command('wtype', '-s', '150', '-k', 'Return')
     wait(lambda: (OUT / 'launched').exists(), 'desktop application not executed')

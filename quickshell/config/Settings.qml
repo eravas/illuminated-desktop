@@ -4,7 +4,6 @@ import Quickshell
 import Quickshell.Io
 import "defaults.js" as Packaged
 import "Reading.js" as Reading
-import "../skin/Registry.js" as SkinRegistry
 // Reads configuration; never defines defaults. Values come from, highest first:
 //   ui.json (choices made inside the shell, unless config.toml pins the key)
 //   resolved.json (config.toml merged over defaults by `illuminated apply`)
@@ -54,9 +53,9 @@ Singleton {
     }
     function color(name) { const value = option("palettes." + appearance + "." + name, undefined); return value !== undefined ? value : lookup(defaults, "palettes.dark." + name); }
     // Registry accessors: cards and groups.
-    // Config first; a skin may add cards and hands of its own (docs/SKINS.md).
-    function card(kind) { return option("cards." + kind, null) || SkinRegistry.card(kind) || ({}); }
-    function group(name) { return option("groups." + name, null) || SkinRegistry.hand(name); }
+    // Config only; SkinStore.card/group add a skin's own (docs/SKINS.md, "Cards.qml").
+    function card(kind) { return option("cards." + kind, null) || ({}); }
+    function group(name) { return option("groups." + name, null); }
     readonly property var groups: option("groups", ({}))
     Process { command: ["mkdir", "-p", root.uiPath.substring(0, root.uiPath.lastIndexOf("/"))]; running: !root.readOnly && root.uiPath !== ""; onExited: function(code) { root.directoryReady = code === 0; } }
     FileView {
@@ -81,50 +80,41 @@ Singleton {
         onSaveFailed: root.ioError = "Cannot save ui.json"
     }
     property string compositor: option("compositor")
-    property bool enableLauncher: option("features.launcher")
     property bool enableCards: option("features.cards")
-    property bool enableNotifications: option("features.notifications")
-    property bool enableTray: option("features.tray")
-    property bool enableOsd: option("features.osd")
     property bool enableRail: option("features.rail")
     property bool enableDock: option("features.dock")
-    property bool enableMedia: option("features.media")
-    property bool enableClipboard: option("features.clipboard")
-    property bool enableWallpaper: option("features.wallpaper")
-    property bool enablePolkit: option("features.polkit")
-    property var launcherPins: option("launcher.pins") || []
-    property bool enableLock: option("features.lock")
-    property string lockPam: option("lock.pam")
     property string wallpaperPath: option("wallpaper.path")
     // Your skin (docs/SKINS.md): skin.json and its images, laid over the default skin.
     readonly property string skinDir: readOnly ? "" : (option("skin.path") || configHome + "/illuminated/skin")
-    // Named commands a skin may trigger as "command:<name>" (argv lives only here, never in a skin).
-    readonly property var customCommands: option("commands.custom") || ({})
-    property real wallpaperFocusY: option("wallpaper.focusY")
+    // Kept as typed properties although they have few readers: each one filters changes for
+    // a binding that builds an object, array or model from it (an inline option() would
+    // re-run those on every ui.json write; tests/runtime/reload.py times out).
+    property var railHands: option("rail.hands")
+    property var launcherPins: option("launcher.pins") || []
+    property int launcherWidth: option("dimensions.launcherWidth")
+    property int launcherHeight: option("dimensions.launcherHeight")
+    property int cardWidth: option("deck.width")
+    property int landscapeCardWidth: option("deck.landscapeWidth")
+    property int cardGap: option("deck.gap")
+    property int cardMargin: option("deck.margin")
+    property real selectionLift: option("deck.selectionLift")
+    property string accent: option("appearance.accent")
+    property string washStrength: option("appearance.wash")
+    property string legibilityFamily: option("typography.legibility")
+    property string blackletterFamily: option("typography.blackletter")
+    property string dockMinimizeWorkspace: option("dock.minimizeWorkspace")
     // ── Reading presets and options (DESIGN-SYSTEM.md §3.9) ───────────────
     readonly property string readingPreset: option("reading.preset")
     readonly property var readingOptions: option("reading.options", ({}))
     readonly property var reading: Reading.resolve(readingPreset, readingOptions)
     readonly property bool readingCustom: Reading.isCustom(readingPreset, readingOptions)
     function readingOption(name) { return reading[name]; }
-    property string accent: option("appearance.accent")
-    property string washStrength: option("appearance.wash")
-    property string colourVision: option("appearance.colourVision")
-    property int pixelLogical: option("pixel.logical")
-    property string legibilityFamily: option("typography.legibility")
-    property string serifFamily: option("typography.serif")
     // ── Rail, dock, removable media ───────────────────────────────────────
-    property var railHands: option("rail.hands")
     property int railInset: option("rail.inset")
     property int railWidth: option("rail.width")
-    property bool railShowDate: option("rail.showDate")
     // Rail and dock both reserve this much (strip + inset + a small gap), DESIGN-SYSTEM.md §3.13.
     readonly property int railReserved: railInset + railWidth + 5
     readonly property int dockReserved: 8 + railWidth
-    property int dockDwell: option("dock.dwell")
-    property int dockHideDelay: option("dock.hideDelay")
-    property string dockMinimizeWorkspace: option("dock.minimizeWorkspace")
-    property var dockDispatch: option("dock.dispatch")
     // permanent | autohide for one output. Accessibility forces permanent.
     function dockMode(outputName, outputHeight) {
         if (reading.dockAutoHide === "never") return "permanent";
@@ -133,41 +123,20 @@ Singleton {
         return mode === "auto" ? (outputHeight > 0 && outputHeight <= 800 ? "autohide" : "permanent") : mode;
     }
     property string mediaScale: option("media.scale")
-    property int mediaScrollThreshold: option("media.scrollThreshold")
     property var mediaOverrides: option("media.overrides", ({}))
     property string appearance: option("appearance.mode")
-    property string blackletterFamily: option("typography.blackletter")
     property bool lowChargeNumeral: reading.lowChargeNumeral === "on"
     property int confirmArmDelay: option("confirm.armDelay")
     property int confirmTimeout: Reading.CONFIRM_TIMEOUT[reading.confirmTimeout] || Reading.CONFIRM_TIMEOUT.normal
     property string fontFamily: option("typography.family")
     property int fontPixelSize: option("typography.size")
     property int smallPixelSize: option("typography.small")
-    property int displayPixelSize: option("typography.display")
-    property int headingPixelSize: option("typography.heading")
-    property int controlHeight: option("dimensions.controlHeight")
-    property int spacing: option("dimensions.spacing")
-    property int inset: option("dimensions.inset")
-    property int radius: option("dimensions.radius")
-    property int sheetWidth: option("dimensions.sheetWidth")
-    property int sheetHeight: option("dimensions.sheetHeight")
-    property int launcherWidth: option("dimensions.launcherWidth")
-    property int launcherHeight: option("dimensions.launcherHeight")
-    property int cardWidth: option("deck.width")
-    property int landscapeCardWidth: option("deck.landscapeWidth")
-    property int cardGap: option("deck.gap")
-    property int cardMargin: option("deck.margin")
     // Card tilt follows reading.options.rotation (full 4°, reduced 2°); off is grid-aligned.
     property real cardRotation: Reading.CARD_ROTATION[reading.rotation]
     property bool deckAligned: reading.rotation === "off"
     readonly property real typeScale: Reading.TYPE_SCALE[reading.typeScale] || 1
     readonly property int targetSize: Reading.TARGET[reading.targets] || 24
-    property real selectionLift: option("deck.selectionLift")
-    property real dragThreshold: option("deck.dragThreshold")
     property bool reducedMotion: option("motion.reduced")
-    property string timeFormat: option("clock.timeFormat")
-    property int notificationHistoryLimit: option("notifications.historyLimit")
-    property string backlightDevice: option("hardware.backlightDevice")
     property var lockCommand: option("commands.lock")
     property bool lockReturnsWhenReady: option("commands.lockReturnsWhenReady")
     property var logoutCommand: option("commands.logout")

@@ -1,8 +1,10 @@
 # Handoff: simplify The Illuminated Desktop (v7-dev)
 
 Audience: Codex, working unattended in an Arch cloud environment that runs **headless Sway**
-(no Hyprland, no Mango renderer). Source: this repository. **Phases 0 and 1 are done**; see
-`docs/STATUS.md` for what was and wasn't verified. Start with *Phase 1 verification* below.
+(no Hyprland, no Mango renderer). Source: this repository. **Progress: Phases 0–4, 6 and 7 are
+done, and Phase 5 is partly done, in an Ubuntu container with an Arch chroot
+(`dev/cloud-setup.sh`). The D2 spike found that neither option reproduces the vellum. See
+`docs/STATUS.md` before anything below.**
 
 ## Goal
 

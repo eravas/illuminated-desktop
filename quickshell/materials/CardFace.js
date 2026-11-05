@@ -88,9 +88,12 @@ function cardGeometry(Wd, Hd, D) {
 function paintCard(px, Wd, Hd, s) {
     var D = s.D || 1, gc = s.gc || 1, g = cardGeometry(Wd, Hd, D), mg = g.frame, bot = g.bottom;
     var base = Colour.rgb(s.base), edge = Colour.rgb(s.edge), w = s.wash, wf = w && !w.foil ? Colour.rgb(w.colour) : null;
-    var lv = w ? Math.max(0, Math.min(1, w.level)) : 0, full = lv >= 0.999, spread = 12 * D * (s.k || g.k || 1);
+    // w.fill: wet everywhere, no boundary (a level layer, MaterialFace); w.sheenLevel: the level
+    // the foil's sheen and burnish follow (default: w.level).
+    var lv = w ? (w.fill ? 1 : Math.max(0, Math.min(1, w.level))) : 0, full = lv >= 0.999, spread = 12 * D * (s.k || g.k || 1);
+    var sl = w && w.sheenLevel !== undefined ? w.sheenLevel : lv;
     var bx = Wd * lv, ly = Hd - Hd * lv, horiz = w && w.axis !== "y";
-    var sf = w && w.foil ? sheen(Wd, Hd, gc) : null, F = w && w.foil ? Colour.ramp(w.foil) : null, amp = w && w.foil ? sheenAmp(lv) : 0, burn = w && w.foil ? burnAmount(lv) : 0;
+    var sf = w && w.foil ? sheen(Wd, Hd, gc) : null, F = w && w.foil ? Colour.ramp(w.foil) : null, amp = w && w.foil ? sheenAmp(sl) : 0, burn = w && w.foil && !w.fill ? burnAmount(sl) : 0;
     var mark = w ? w.mark || "dither" : "dither", lineCol = w ? Colour.rgb(w.line || (w.foil ? Colour.ramp(w.foil)[0] : Colour.mixLab(w.colour, s.onFill || "#211C15", 0.45))) : null;
     var period = 18 * D * Math.max(0.6, g.k), bands = s.bands ? Colour.rgb(s.bands.colour) : null;
     var chinFill = s.chinFill ? Colour.rgb(s.chinFill.colour) : null, bleed = s.chinFill && s.chinFill.bleed, E = 9 * D * Math.max(0.6, g.k);

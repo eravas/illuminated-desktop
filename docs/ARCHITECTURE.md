@@ -22,7 +22,7 @@ place themselves, so arrangement order does not matter. The dock reads
 `focusWindow`/`bringWindow`/`minimizeActive`; Hyprland dispatch strings come from the
 `[dock.dispatch]` templates. Removable media is `services/RemovableMedia.qml` (event streams
 from `udisksctl monitor` and `udevadm monitor`, snapshots from busctl, parsing in
-`MediaLogic.js`); `rail/MediaBay.qml` draws the current device and `media/DeviceHand.qml`
+`MediaLogic.js`); `rail/DeviceBay.qml` draws the current device and `media/DeviceHand.qml`
 hands it to the cards layer with `DeviceCard`.
 
 The modules in `materials/` (`CardFace.js`, `CardPaint.js`, `DeviceArt.js`, `VellumPaint.js`
@@ -32,6 +32,19 @@ re-exports them in one namespace for those tools; shell files import the module 
 sit on the output grid; faces, initials, the loupe, vellum and devices are painted once and
 kept as textures. Reading options resolve in `config/Reading.js`; components read
 `Settings.reading.<option>`, never the preset name.
+
+## Skins
+
+The rail's objects and the dock's extra buttons are QML from the skin (docs/SKINS.md):
+`rail/Rail.qml` loads the skin's `Rail.qml` (a `RailLayout`) into the vellum strip, and
+`rail/Dock.qml` its `DockChrome.qml`. The shell API is the `qs.skin` module (`quickshell/skin/`):
+`SkinItem`, `FrameImage`, `InkFill`, `Marker`, hit shapes, the rail parts, typed `ShellState`,
+`Actions` and `SkinStore`. Objects show frames of pre-baked sheets
+(`scripts/skin/bake-elements.cjs` runs the old compose-and-finish code at build time), so the
+shell does no pixel work for them. `illuminated apply` lays the user's skin over the default by
+file into `generated/skin/` (`lib/illuminated/skin.py`). Skin cards and hands come from the
+skin's `Cards.qml`; `SkinStore.card/group` combine them with config, which keeps `config/`
+free of imports from `skin/`.
 
 ## Compositor boundary
 

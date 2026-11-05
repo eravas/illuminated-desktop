@@ -5,6 +5,7 @@
 // "preset" takes the chosen preset's value; Legibility starts from Default and Accessibility
 // from Legibility, so every preset names every option.
 
+// <generated from config/defaults.toml schema.rules: reading.options.*>
 var OPTIONS = {
     face: ["pirata", "germania", "sans"],
     numerals: ["minuscule", "capital", "arabic"],
@@ -26,6 +27,7 @@ var OPTIONS = {
     lowChargeNumeral: ["off", "on"],
     secondaryInk: ["normal", "high"]
 };
+// </generated>
 
 var DEFAULT = {
     face: "pirata", numerals: "minuscule", typeScale: "normal", texture: "full", wash: "fade",

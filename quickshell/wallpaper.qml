@@ -27,7 +27,7 @@ Scope {
                 readonly property real cover: Math.max(win.width, win.height / ratio)
                 width: cover; height: cover * ratio
                 x: (win.width - width) / 2
-                y: (win.height - height) * Settings.wallpaperFocusY
+                y: (win.height - height) * Settings.option("wallpaper.focusY")
                 source: Settings.wallpaperPath ? "file://" + Settings.wallpaperPath : Qt.resolvedUrl("assets/wallpaper.jpg")
                 fillMode: Image.Stretch
                 sourceSize.width: Math.round(win.width * (win.screen ? win.screen.devicePixelRatio : 1))

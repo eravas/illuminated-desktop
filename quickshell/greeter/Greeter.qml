@@ -95,7 +95,7 @@ PanelWindow {
             Paper { anchors.fill: parent }
             ColumnLayout {
                 anchors.fill: parent; anchors.margins: 24; spacing: Theme.gap
-                InkLabel { text: "The Illuminated Desktop"; font.pixelSize: Settings.headingPixelSize; Layout.fillWidth: true }
+                InkLabel { text: "The Illuminated Desktop"; font.pixelSize: Settings.option("typography.heading"); Layout.fillWidth: true }
                 InkLabel { text: "Welcome to the Herbarium"; color: Theme.accent }
                 ComboBox { Layout.fillWidth: true; model: root.sessions; textRole: "name"; currentIndex: root.sessionIndex; enabled: !root.authenticating && !root.authenticated; onActivated: root.sessionIndex = currentIndex }
                 SearchField { id: username; objectName: "greeter-user"; Layout.fillWidth: true; placeholderText: "Username"; enabled: !root.authenticating && !root.authenticated; onAccepted: root.begin(); Accessible.name: "Username" }

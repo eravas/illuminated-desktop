@@ -1,5 +1,6 @@
 import QtQuick
 import QtQuick.Window
+import Quickshell
 import "../config"
 // A Canvas whose backing image is in device pixels, so dither cells land on the output's
 // pixel grid at any scale. Painted on demand and then a static texture: nothing redraws
@@ -9,12 +10,16 @@ import "../config"
 Item {
     id: root
     property real dpr: Screen.devicePixelRatio > 0 ? Screen.devicePixelRatio : 1
-    readonly property int grain: Math.max(1, Math.round(Settings.pixelLogical * dpr))
+    readonly property int grain: Math.max(1, Math.round(Settings.option("pixel.logical") * dpr))
     readonly property int deviceWidth: Math.max(1, Math.round(width * dpr))
     readonly property int deviceHeight: Math.max(1, Math.round(height * dpr))
     property int coalesce: 0
+    readonly property alias canvasItem: canvas
+    // ILLUMINATED_PROFILE=1 logs each paint's duration: "paint <kind> <w>x<h> <ms>".
+    property string kind: objectName || (parent ? String(parent).split("_QML")[0].split("(")[0] : "?")
     // Handlers: onPainting: function(ctx, w, h) { … } — w, h in device px.
     signal painting(var ctx, int w, int h)
+    signal drawn()             // the drawing has reached the canvas image (toDataURL is current)
     // Images for drawImage (skin art). One rule for every user: images(urls) is "ready",
     // "loading" (this canvas repaints when they arrive) or "failed"; build-once-then-release
     // goes through withImages(), which keeps nothing decoded after it returns.
@@ -40,16 +45,25 @@ Item {
         smooth: false
         renderTarget: Canvas.Image
         renderStrategy: Canvas.Cooperative
-        onWidthChanged: requestPaint()
-        onHeightChanged: requestPaint()
+        // A size change repaints by itself (Canvas follows canvasSize); asking again painted twice.
         onImageLoaded: root.repaint()
+        onPainted: root.drawn()
         onPaint: {
             if (root.width <= 0 || root.height <= 0) return;
+            const t0 = Profile.enabled ? Date.now() : 0;
             const ctx = getContext("2d");
-            MaterialFields.ensure(root, ctx);     // the skin's material images, once per skin
+            if (!MaterialFields.ensure(root, ctx)) return;   // the skin's materials first; repainted on version
+            root.paintedWith = MaterialFields.installed;
+            const t1 = Profile.enabled ? Date.now() : 0;
             root.painting(ctx, width, height);
+            if (Profile.enabled) Profile.paint(root.kind, width, height, t1 - t0, Date.now() - t1);
         }
     }
-    Connections { target: MaterialFields; function onVersionChanged() { canvas.requestPaint(); } }
+    Component.onCompleted: if (Profile.enabled) Profile.alive++
+    Component.onDestruction: if (Profile.enabled) Profile.alive--
+    // Repaint when the materials change, not when another canvas merely finished installing
+    // the ones this canvas already painted with.
+    property string paintedWith: "-"
+    Connections { target: MaterialFields; function onVersionChanged() { if (root.paintedWith !== MaterialFields.installed) canvas.requestPaint(); } }
     Timer { id: throttle; interval: root.coalesce; onTriggered: canvas.requestPaint() }
 }

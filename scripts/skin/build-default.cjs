@@ -199,15 +199,33 @@ function example(geo) {
   for (const [p, url] of Object.entries(built.files)) { const f = path.join(out, p); fs.mkdirSync(path.dirname(f), {recursive: true}); fs.writeFileSync(f, Buffer.from(url.split(',')[1], 'base64')); }
   // The example skin: a worked example of overriding and adding (docs/SKINS.md, "Example").
   const exDir = path.join(path.dirname(out), 'example');
-  fs.rmSync(exDir, {recursive: true, force: true});
+  const exKeep = fs.mkdtempSync(path.join(require('node:os').tmpdir(), 'example-'));
+  for (const f of fs.existsSync(exDir) ? fs.readdirSync(exDir) : []) if (/\.(qml|json)$/.test(f)) fs.copyFileSync(path.join(exDir, f), path.join(exKeep, f));
+  fs.rmSync(path.join(exDir, 'rail'), {recursive: true, force: true}); fs.rmSync(path.join(exDir, 'cards'), {recursive: true, force: true});
   for (const [p, url] of Object.entries(built.ex)) { const f = path.join(exDir, p); fs.mkdirSync(path.dirname(f), {recursive: true}); fs.writeFileSync(f, Buffer.from(url.split(',')[1], 'base64')); }
-  fs.writeFileSync(path.join(exDir, 'skin.json'), JSON.stringify(example(built.geo), null, 2) + '\n');
+  // The example's QML and skin.json are hand-written (quickshell/skins/example/*.qml); keep them.
+  for (const f of fs.readdirSync(exKeep)) fs.copyFileSync(path.join(exKeep, f), path.join(exDir, f));
+  fs.rmSync(exKeep, {recursive: true, force: true});
   // Materials (written by build-materials.cjs) are kept and merged in if present.
   const mfile = path.join(out, 'materials.json'), m = manifest(built.geo, built.dev);
   if (fs.existsSync(mfile)) m.materials = JSON.parse(fs.readFileSync(mfile, 'utf8'));
   const lfile = path.join(out, 'loupes.json');
   if (fs.existsSync(lfile)) m.loupes = JSON.parse(fs.readFileSync(lfile, 'utf8'));
   m.initial = 'materials/initial.png';
-  fs.writeFileSync(path.join(out, 'skin.json'), JSON.stringify(m, null, 2) + '\n');
+  m.vellumShade = 'materials/vellum-shade.png';   // scripts/skin/build-shade.cjs
+  // skin.json keeps plain asset data; the objects' looks go to elements.json, the source of
+  // scripts/skin/bake-elements.cjs (run it next: it bakes them into <skin>/elements/).
+  const LOOKS = ['units', 'inks', 'sheets', 'images', 'elements'], data = {}, looks = {};
+  for (const [k, v] of Object.entries(m)) if (LOOKS.includes(k)) looks[k] = v; else if (!['rail', 'dock', 'cards', 'hands'].includes(k)) data[k] = v;
+  fs.writeFileSync(path.join(out, 'skin.json'), JSON.stringify(data, null, 2) + '\n');
+  const relative = (o, dir) => JSON.parse(JSON.stringify(o), (k, v) => typeof v === 'string' && /\.png$/.test(v) && (k === 'file' || !k || /^[a-z.]+$/i.test(k)) ? path.posix.normalize(dir + '/' + v) : v);
+  const def = relative(looks, 'default'), clip = def.elements.paper.regions[1].rect;
+  def.elements.paperclip = {size: clip.slice(2), anchor: [0, 0], image: 'paperclip'};
+  const ex = example(built.geo), exLooks = relative({sheets: ex.sheets, images: ex.images, elements: ex.elements}, 'example');
+  const merged = JSON.parse(JSON.stringify(def));
+  for (const k of ['sheets', 'images']) Object.assign(merged[k], exLooks[k]);
+  for (const [id, el] of Object.entries(exLooks.elements)) merged.elements[id] = Object.assign({}, merged.elements[id] || {}, el);
+  merged.elements.clip = {size: clip.slice(2), anchor: [0, 0], frames: {source: 'frame', min: 0, max: 4, images: 'clip.wiggle'}};
+  fs.writeFileSync(path.join(__dirname, 'elements.json'), JSON.stringify({default: def, example: merged}, null, 1) + '\n');
   console.log('wrote', Object.keys(built.files).length, 'images and skin.json to', out);
 })();

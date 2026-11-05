@@ -1,4 +1,4 @@
-# Unreleased — simplification pass, phase 1 (deletions)
+# Unreleased — simplification pass
 
 Removes what earlier versions left behind. Nothing visible changes except the removals below.
 Phases 2–7 are in [SIMPLIFICATION-HANDOFF.md](SIMPLIFICATION-HANDOFF.md); progress and what
@@ -13,7 +13,37 @@ has been verified, and how, are in [docs/STATUS.md](docs/STATUS.md).
   (the Herbarium "Align cards to grid" toggle now sets it); the confirmation timeout comes
   only from `reading.options.confirmTimeout`.
 - **Five reading options with no implementation removed.**
-- A 2 Hz timer in the notification hub that updated an unread property is gone.
+- The notification hub's 2 Hz timer now runs only while a popup is waiting to expire, and
+  fires at its deadline. (Phase 1 removed it outright, which stopped popups expiring.)
+- **Every hand travels in from the left.** The top-origin deck (a vertical lane under the
+  bar, the fallback with the rail off, and the dock's hands) is gone; with the rail off, or
+  over IPC, a hand is dealt at the screen's middle, and a dock element deals at its height.
+- **Groups `light` and `session` no longer ship.** They duplicated `levels`/`battery` and
+  `power`. `illuminated cards session` becomes `illuminated cards power`. A partial override
+  such as `[groups.session] cards = …` now defines an incomplete group: rename it to
+  `[groups.power]`, or give it `glyph` and `label`.
+- **Card behaviour is no longer configuration.** `[cards.*]` keeps `title`, `short`,
+  `sheet` and `confirm`; orientation, click/drag behaviour and Sleep's menu come from the
+  card kind. (Setting `cards.volume.interaction = "toggle"` used to turn clicks into flips.)
+- **QML skins.** A skin is a folder of QML files laid over the default skin by file
+  (`illuminated apply` builds `generated/skin/`); `skin.json` keeps only data (devices,
+  materials, loupes, card art, pins). Rail and dock objects are `SkinItem`s showing pre-baked
+  frames; the shell no longer composites, dithers or shadows them at runtime (they cost 0.6–2 s
+  of GUI time each on first paint, and ~400 ms per volume change). Skins in the old format
+  (`elements`, `rail.items`, `dock.before/after`, `cards`/`hands` in skin.json) are ignored with
+  a warning; see docs/SKINS.md to port one (the example skin shows every feature it had).
+  `ShellState` has typed properties instead of a `values` map. `illuminated doctor` runs
+  qmllint over your skin. Visible changes: rail objects sit 1–3 px differently (whole-pixel
+  boxes), and their art is scaled from 1× or 2× bakes when the output is not the 24″ 1080p
+  scale, instead of being dithered at the exact size.
+- **Vellum, focus halos and level cards no longer repaint pixel by pixel.** The vellum interior
+  is native (an exact texture overlay); edges and halos are images painted once per palette and
+  shared; level cards paint each look once and show the level by clipping. First launcher open
+  went from 8.6 s to under 0.1 s of GUI time on the test machine; a volume drag paints nothing.
+  The skin needs `materials/vellum-shade.png` (`node scripts/skin/build-shade.cjs <skin>` after
+  replacing `vellum.png`; `vellumShade` in skin.json).
+- Skin elements painted nothing under Qt 6.12 (`SkinElement.layer()` was shadowed by
+  `Item.layer`); fixed.
 - The `Materials.js` facade moved from `quickshell/materials/` to `scripts/skin/` (tests and
   the skin build only); `CommandAction.qml` moved from `tools/` to `services/`.
 - The tree is now a Git repository; `checkpoints/` (history bundles, foundation tarball) and
@@ -35,6 +65,9 @@ has been verified, and how, are in [docs/STATUS.md](docs/STATUS.md).
 | `deck.rotation`, `deck.aligned` | `reading.options.rotation` (`full` 4°, `reduced` 2°, `off` aligned) |
 | `confirm.timeout` | `reading.options.confirmTimeout` (`normal` 5 s, `long` 15 s) |
 | `reading.options.disabled`, `focusRing`, `overflow`, `stateText`, `stickySelect` | — |
+| `cards.<kind>.orientation`, `.interaction`, `.alternatives` (behaviour is code: `quickshell/artifacts/kinds/`) | — |
+| `dimensions.inset` (the margin inside plain-paper cards; every card draws its own cardstock) | — |
+| `groups.light`, `groups.session` (no longer shipped; your own definitions still work) | `groups.levels`, `groups.battery`, `groups.power` |
 
 `ui.json` entries for removed keys are ignored, not rejected.
 

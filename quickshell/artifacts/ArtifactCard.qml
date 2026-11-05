@@ -7,12 +7,9 @@ FocusScope {
     id: root
     property real aspectRatio: 5 / 7
     readonly property bool horizontal: aspectRatio > 1
+    // Each face draws its own cardstock (MaterialFace), edge to edge.
     property Component front
-    property real frontInset: Theme.inset
     property Component back
-    property real backInset: 10
-    // Plain paper behind the faces; service cards draw their own cardstock.
-    property bool decorated: true
     // Flip control on the top-right corner (cards whose click does something else).
     property bool dogEar: false
     property real dogEarSize: 18
@@ -71,12 +68,10 @@ FocusScope {
             transform: Scale { origin.x: root.width / 2; xScale: Math.abs(Math.cos(Math.PI * root.flipProgress)) }
             // Focus light: solid core on the card's rounded edge, dithered fringe beyond (§3.4).
             Loader { anchors.fill: parent; active: root.selected; sourceComponent: FocusHalo { radius: 0.055 * Math.min(root.width, root.height) } }
-            // Service cards paint their own cardstock (with rounded corners and the dog-ear cut).
-            Paper { anchors.fill: parent; visible: root.decorated; decorated: root.decorated }
-            Loader { anchors.fill: parent; anchors.margins: root.frontInset; sourceComponent: root.front; visible: root.frontFacing }
+            Loader { anchors.fill: parent; sourceComponent: root.front; visible: root.frontFacing }
             Loader {
                 id: backLoader
-                anchors.fill: parent; anchors.margins: root.backInset; sourceComponent: root.back
+                anchors.fill: parent; sourceComponent: root.back
                 visible: !root.frontFacing
                 enabled: root.interactive && root.flipProgress > 0.95
             }
@@ -95,7 +90,7 @@ FocusScope {
                     if (!pressed || !root.direct || pressedButtons !== Qt.LeftButton) return;
                     const scene = mapToItem(null, mouse.x, mouse.y);
                     const dx = scene.x - root.pressScene.x, dy = scene.y - root.pressScene.y;
-                    if (Math.hypot(dx, dy) > Settings.dragThreshold) root.dragging = true;
+                    if (Math.hypot(dx, dy) > Settings.option("deck.dragThreshold")) root.dragging = true;
                     if (root.dragging) root.adjusted(root.horizontal ? dx / root.width : -dy / root.height);
                 }
                 onReleased: function(mouse) {

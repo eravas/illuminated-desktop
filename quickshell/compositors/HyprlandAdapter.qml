@@ -23,7 +23,7 @@ Scope {
     readonly property var windows: ready ? WindowLogic.hyprlandWindows(Hyprland.toplevels.values, Hyprland.activeToplevel ? Hyprland.activeToplevel.address : "", Settings.dockMinimizeWorkspace) : []
     readonly property string currentWorkspace: ready && Hyprland.focusedMonitor && Hyprland.focusedMonitor.activeWorkspace ? String(Hyprland.focusedMonitor.activeWorkspace.name) : ""
     function send(kind, vars) {
-        const request = WindowLogic.dispatchFor(kind, Hyprland.usingLua, Settings.dockDispatch, vars);
+        const request = WindowLogic.dispatchFor(kind, Hyprland.usingLua, Settings.option("dock.dispatch"), vars);
         if (request) Hyprland.dispatch(request);
         return request !== "";
     }
@@ -40,24 +40,14 @@ Scope {
         if (ready && a) send("move", {address: a, workspace: "special:" + Settings.dockMinimizeWorkspace});
     }
     function reconcile() { if (health.connected) { Hyprland.refreshMonitors(); Hyprland.refreshWorkspaces(); Hyprland.refreshToplevels(); } }
-    function context(name, allOutputs) {
+    function context(name) {
         const monitor = ready ? outputs.find(m => m.name === name) : null;
-        const spaces = monitor ? WorkspaceLogic.ordinaryWorkspaces(Hyprland.workspaces.values, name, allOutputs).map(w => ({id: w.id, name: w.name, kind: "workspace", output: w.monitor ? w.monitor.name : name, active: w.active, focused: w.focused, urgent: w.urgent, toplevels: {values: w.toplevels.values}})) : [];
+        const spaces = monitor ? WorkspaceLogic.ordinaryWorkspaces(Hyprland.workspaces.values, name, false).map(w => ({id: w.id, name: w.name, kind: "workspace", output: w.monitor ? w.monitor.name : name, active: w.active, focused: w.focused, urgent: w.urgent, toplevels: {values: w.toplevels.values}})) : [];
         // Until Hyprland's objects know the active workspace, use the one-shot hyprctl seed.
         const seeded = !root.settled && seed.workspace !== 0 && monitor && seed.monitor === monitor.name;
         const selection = spaces.filter(w => w.active || (seeded && w.id === seed.workspace)).map(w => w.id);
         return {ready: !!monitor, modelKind: kind, monitorName: monitor ? monitor.name : name, monitorFocused: monitor ? monitor.focused || seeded : false,
-            spaces: spaces, selection: selection,
-            title: monitor && monitor.focused && root.toplevelOn(Hyprland.activeToplevel, monitor) ? Hyprland.activeToplevel.title
-                : monitor && monitor.activeWorkspace ? "Workspace " + monitor.activeWorkspace.name
-                : seeded ? "Workspace " + seed.name : "Waiting for Hyprland"};
-    }
-    // Hyprland keeps reporting the last active window after focus moves to an empty
-    // workspace; only use it while it is on that monitor's active workspace.
-    function toplevelOn(toplevel, monitor) {
-        if (!toplevel) return false;
-        if (toplevel.workspace === undefined || !monitor.activeWorkspace) return true;   // older Quickshell: no workspace link
-        return toplevel.workspace === monitor.activeWorkspace;
+            spaces: spaces, selection: selection};
     }
     function activate(space, extend) {
         if (!ready) return;
@@ -72,11 +62,11 @@ Scope {
         onConnectedChanged: if (connected) root.reconcile()
     }
     Timer { interval: 2000; running: true; repeat: true; onTriggered: if (!health.connected && health.path) health.connected = true }
-    Timer { interval: 10000; running: true; repeat: true; onTriggered: root.reconcile() }
     // The first refresh on connect can land before Hyprland has reported monitors, and the
     // focused monitor/active workspace are otherwise only filled by the next event (an idle
     // desktop may send none). Ask every 250 ms until both are known, for at most 10 s;
-    // the 10 s reconcile and events take over after that, so this never becomes polling.
+    // events take over after that, so this never becomes polling. Reconciliation otherwise
+    // happens only when the event socket (re)connects.
     property int settleTries: 0
     Timer {
         interval: 250; repeat: true

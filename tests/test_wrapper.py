@@ -19,7 +19,7 @@ class WrapperTests(unittest.TestCase):
 
     def test_ipc(self):
         for args, tail in [(("launcher",), ["toggleLauncher"]), (("hide",), ["hide"]),
-                           (("cards", "session"), ["cards", "session"]), (("volume", "up"), ["volume", "0.05"]),
+                           (("cards", "power"), ["cards", "power"]), (("volume", "up"), ["volume", "0.05"]),
                            (("volume", "mute"), ["mute"]), (("brightness", "down"), ["brightness", "-0.05"])]:
             with self.subTest(args=args):
                 self.assertEqual(self.call(*args), ["ipc", "-p", self.shell + "/shell.qml", "call", "shell", *tail])

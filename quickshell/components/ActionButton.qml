@@ -10,7 +10,7 @@ Button {
     id: root
     property alias horizontalAlignment: label.horizontalAlignment
     property bool ruled: true
-    implicitHeight: Settings.controlHeight
+    implicitHeight: Settings.option("dimensions.controlHeight")
     implicitWidth: Math.max(36, label.implicitWidth + 20)
     focusPolicy: Qt.StrongFocus
     activeFocusOnTab: true

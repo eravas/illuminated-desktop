@@ -40,9 +40,9 @@ Scope {
             color: Theme.paper
             readonly property bool isPrimary: !root.primary || surface.screen === root.primary
             Image {
-                visible: Settings.enableWallpaper && status === Image.Ready
+                visible: Settings.option("features.wallpaper") && status === Image.Ready
                 anchors.fill: parent
-                source: !Settings.enableWallpaper ? "" : Settings.wallpaperPath ? "file://" + Settings.wallpaperPath : Qt.resolvedUrl("assets/wallpaper.jpg")
+                source: !Settings.option("features.wallpaper") ? "" : Settings.wallpaperPath ? "file://" + Settings.wallpaperPath : Qt.resolvedUrl("assets/wallpaper.jpg")
                 fillMode: Image.PreserveAspectCrop
                 sourceSize.width: Math.round(surface.width * (surface.screen ? surface.screen.devicePixelRatio : 1))
                 asynchronous: true
@@ -60,7 +60,7 @@ Scope {
                     spacing: 8
                     Text {
                         Layout.alignment: Qt.AlignHCenter
-                        text: Qt.formatDateTime(Time.now, Settings.timeFormat); textFormat: Text.PlainText
+                        text: Qt.formatDateTime(Time.now, Settings.option("clock.timeFormat")); textFormat: Text.PlainText
                         font.family: Theme.cardFamily; font.bold: Theme.cardBold; font.pixelSize: Math.round(64 * Theme.typeScale)
                         color: Theme.ink
                     }
@@ -90,7 +90,7 @@ Scope {
     }
     PamContext {
         id: pam
-        config: Settings.lockPam
+        config: Settings.option("lock.pam")
         onPamMessage: { root.busy = false; if (!pam.responseRequired) { root.message = pam.message; root.error = pam.messageIsError; } }
         onCompleted: result => {
             root.busy = false;
@@ -107,13 +107,17 @@ Scope {
     Timer { id: restart; interval: Math.min(5000, 400 * Math.max(1, root.failures)); onTriggered: root.begin() }
     function begin() {
         if (!session.locked || pam.active) return;
-        if (!pam.start()) { root.error = true; root.message = "Could not start PAM (" + Settings.lockPam + "); trying again."; restart.restart(); }
+        if (!pam.start()) { root.error = true; root.message = "Could not start PAM (" + Settings.option("lock.pam") + "); trying again."; restart.restart(); }
     }
     function respond(text) {
         if (!pam.active || !pam.responseRequired) return;
         busy = true; error = false; message = "";
         pam.respond(text);
     }
+    readonly property bool secure: session.secure
+    function abandon() { if (session.locked && !session.secure) { session.locked = false; return true; } return false; }
+    Component.onCompleted: LockState.screen = root
+    Component.onDestruction: if (LockState.screen === root) LockState.screen = null
     function lockNow() {
         if (session.locked) return;
         primary = DesktopState.focusedScreen;
@@ -125,6 +129,6 @@ Scope {
         function lock(): void { root.lockNow(); }
         function status(): string { return JSON.stringify({locked: session.locked, secure: session.secure, pam: pam.active}); }
         // Give up a lock the compositor never confirmed, so another locker can take the session.
-        function abandon(): bool { if (session.locked && !session.secure) { session.locked = false; return true; } return false; }
+        function abandon(): bool { return root.abandon(); }
     }
 }

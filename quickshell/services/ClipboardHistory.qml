@@ -12,7 +12,7 @@ Singleton {
     property var entries: []          // [{line, id, preview, binary}]
     property string error: ""
     property bool loading: lister.running
-    function refresh() { if (Settings.enableClipboard && !lister.running) { error = ""; lister.running = true; } }
+    function refresh() { if (Settings.option("features.clipboard") && !lister.running) { error = ""; lister.running = true; } }
     function choose(entry) {
         if (!entry || decoder.running) return;
         if (entry.binary) { error = "Images can’t be restored from here yet"; return; }

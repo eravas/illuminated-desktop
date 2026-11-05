@@ -21,7 +21,7 @@ Singleton {
     property var busy: ({})           // id → action name while one runs
     property var errors: ({})         // id → last failure, in words
     property string error: ""         // service-level problem (udisks missing, …)
-    readonly property bool enabled: Settings.enableMedia
+    readonly property bool enabled: Settings.option("features.media")
     signal ejected(string id)
     property string warning: ""
     property var ejectedIds: ({})

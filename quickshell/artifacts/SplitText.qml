@@ -2,24 +2,47 @@ import QtQuick
 import "CardModel.js" as CardModel
 import "../theme"
 // Live text inked by what lies beneath it: over the wash it takes the wash's
-// ink, elsewhere `ink`. Two clipped copies meet exactly at the wash boundary.
-// originX/originY: this item's position in face coordinates.
+// ink, elsewhere the face's ink. Two clipped copies meet exactly at the wash boundary.
+// face: the card face this is printed on, {item, ink, wash}; where the text sits on it is
+// mapped, not passed in, and follows layout changes.
 Item {
     id: root
     property string text
-    property color ink
-    property var wash: null
-    property real faceWidth
-    property real faceHeight
-    property real originX: 0
-    property real originY: 0
-    property string family
+    property var face: null
+    readonly property color ink: face ? face.ink : "transparent"
+    readonly property var wash: face ? face.wash || null : null
+    property string family: Theme.cardFamily
     property real pixelSize: 16
     property bool bold: Theme.cardBold     // blackletter faces have a single weight
     property int horizontalAlignment: Text.AlignLeft
+    // Position on the face. Recomputed when this item, an ancestor up to the face, or the
+    // face itself moves or resizes.
+    property real originX: 0
+    property real originY: 0
+    function place() {
+        if (!face || !face.item) return;
+        const p = mapToItem(face.item, 0, 0);
+        originX = p.x; originY = p.y;
+    }
+    property var watched: []
+    function watch() {
+        unwatch();
+        const items = [];
+        for (let a = root; a && face && a !== face.item; a = a.parent) items.push(a);
+        if (face && face.item) items.push(face.item);
+        for (const a of items) { a.xChanged.connect(root.schedule); a.yChanged.connect(root.schedule); a.widthChanged.connect(root.schedule); a.heightChanged.connect(root.schedule); }
+        watched = items;
+        place();
+    }
+    function unwatch() { for (const a of watched) { a.xChanged.disconnect(root.schedule); a.yChanged.disconnect(root.schedule); a.widthChanged.disconnect(root.schedule); a.heightChanged.disconnect(root.schedule); } watched = []; }
+    function schedule() { Qt.callLater(root.place); }
+    onFaceChanged: Qt.callLater(root.watch)
+    onParentChanged: Qt.callLater(root.watch)
+    Component.onCompleted: watch()
+    Component.onDestruction: unwatch()
     implicitWidth: probe.implicitWidth
     implicitHeight: probe.implicitHeight
-    readonly property var area: CardModel.washRect(wash, faceWidth, faceHeight)
+    readonly property var area: face && face.item ? CardModel.washRect(wash, face.item.width, face.item.height) : CardModel.washRect(null, 0, 0)
     // Wash region in local coordinates. Washes start at the left or bottom edge,
     // so the remaining region is always a single rectangle.
     readonly property real washLeft: Math.max(0, area.x - originX)

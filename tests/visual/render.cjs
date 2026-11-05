@@ -21,8 +21,6 @@ const lib = [
   wrapped(q('materials/DeviceGeometry.js'), 'Geo', shared),
   wrapped(q('materials/DeviceArt.js'), 'DeviceArt', shared),
   wrapped(q('materials/ArtLayers.js'), 'ArtLayers', shared),
-  wrapped(q('skin/Skin.js'), 'Skin', shared),
-  wrapped(q('skin/Compose.js'), 'Compose', shared),
   wrapped(q('artifacts/CardModel.js'), 'CardModel', shared),
 ].join('\n');
 
@@ -107,50 +105,10 @@ window.renderChrome=function(mode,D){
   slots.forEach(([mark,kind,level,stage])=>{const z=canvas(32,32,4),zc=qmlContext(z),w=z.width,im=zc.createImageData(w,w);Sel.paintInitial(im.data,w,w,{kind,level,stage,D:4,gc:4});zc.putImageData(im,0,0,0,0,im.width,im.height);M.drawInitialMark(zc,mark,w,4,'Pirata One');z.style.width='96px';z.style.height='96px';big.append(z);});
   fig(s,big,'Initials at 3× (grain = 1 logical px)');
 };
-// The skin path, as SkinElement paints it: look → layers → compose → finish, for the default
-// skin's rail at several shell states. Images resolve through window.__images ('skin/<path>').
-function bakeElement(m,el,values,D,pxmm,gc){
-  const scale=Skin.scaleFor(Skin.unitsOf(m,el),pxmm),margin=el.shadow===false?0:6,g=Compose.geometry(el.size,scale,margin,D);
-  const cv=document.createElement('canvas');cv.width=g.W;cv.height=g.H;cv.style.width=(g.W/D)+'px';cv.style.height=(g.H/D)+'px';const ctx=qmlContext(cv);
-  const layer=(ref,rect)=>{const r=rect||[0,0,el.size[0],el.size[1]];return ArtLayers.rasterise(ctx,g.W,g.H,D,ref.file,margin+r[0]*scale,margin+r[1]*scale,r[2]*scale,r[3]*scale,0,ref.rect);};
-  const lk=Skin.look(el,values),regions=(el.regions||[]).filter(r=>Skin.test(r.visibleWhen,values)).map(r=>({id:r.id,rect:r.rect||null,look:Skin.look(r,values)}));
-  const px=Compose.compose({manifest:m,g,look:lk,state:values,layer,regions,inks:m.inks});Compose.finish(px,g,gc,{dither:el.dither!==false,shadow:el.shadow!==false});
-  const img=ctx.createImageData(g.W,g.H);ArtLayers.copyInto(img.data,px);ctx.putImageData(img,0,0,0,0,g.W,g.H);
-  const an=el.anchor||[0,0];return {cv,g,ax:margin+an[0]*scale,ay:margin+an[1]*scale,alpha:Compose.alpha(px,g.W,g.H),scale,margin};
-}
-window.renderSkin=async function(mode,D,states,files,example){
-  window.__images=window.__images||{};
-  for(const [p,url] of Object.entries(files)){const i=new Image();i.src=url;await i.decode();window.__images['skin/'+p]=i;window.__images['example/../default/'+p]=i;}
-  for(const [p,url] of Object.entries(example?window.__exampleFiles:{})){const i=new Image();i.src=url;await i.decode();window.__images['example/'+p]=i;}
-  const m=example?Skin.merge(Skin.absolutise(window.__skin,'skin/'),Skin.absolutise(window.__example,'example/')):Skin.absolutise(window.__skin,'skin/'),s=sheet(mode),M=window.M,p=DEF.palettes[mode],gc=Math.max(1,Math.round(D)),k=1366/344,RW=64,RX=3;
-  window.__hits=[];
-  for(const st of states){
-    const values=Object.assign({mode},st),H=700,cv=canvas(110,H,D),ctx=qmlContext(cv),W=cv.width,HH=cv.height;cv.style.width=W+'px';cv.style.height=HH+'px';
-    const im=ctx.createImageData(W,HH);M.paintVellum(im.data,W,HH,{x0:RX*D,y0:8*D,w:RW*D,h:(H-16)*D,D,gc,mode,base:p.paper,fray:mode==='dark'?'#120F0A':'#A6967B',edge:p.edge});
-    M.paintWash(im.data,W,HH,{x0:(RX+9)*D,y0:17*D,w:(RW-18)*D,h:(H-34)*D,D,gc,mode,tone:M.washTone(p.paper,'#8A9F7B',p.ink,mode,'medium').tone,horizontal:false,radius:9*D});
-    ctx.putImageData(im,0,0,0,0,W,HH);const c2=cv.getContext('2d');
-    const draw=(b,x,y)=>c2.drawImage(b.cv,Math.round((x-b.ax)*D),Math.round((y-b.ay)*D));
-    let y=18;
-    for(const it of m.rail.items){
-      if(it.element){const el=m.elements[it.element];if(!Skin.test(el.visibleWhen,values))continue;const b=bakeElement(m,el,values,D,k,gc),h=b.g.h+4,cx=it.place==='center'?RX+RW/2:RX+RW-4;draw(b,cx,y+h/2);y+=h;}
-      else if(it.system==='rule'){c2.fillStyle=p.edge;c2.fillRect((RX+18)*D,(y+6)*D,28*D,D);y+=13;}
-      else if(it.system==='workspaces'){c2.fillStyle=p.ink;c2.font=(20*D)+'px serif';c2.textAlign='center';['j','ij','iij'].forEach((t,i)=>c2.fillText(t,(RX+RW/2)*D,(y+22+i*26)*D));y+=86;}
-      else if(it.system==='clock'){c2.fillStyle=p.ink;c2.font=(21*D)+'px serif';c2.textAlign='center';c2.fillText('17:09',(RX+RW/2)*D,(H-120)*D);}
-    }
-    const foot=m.rail.items.find(i=>i.foot),fe=m.elements[foot.foot],fb=bakeElement(m,fe,values,D,k,gc);draw(fb,0,H);
-    // Hits on the foot: the clip region, the sheet, outside.
-    const clip=fe.regions.find(r=>r.id==='clip'),at=[clip.rect[0]+clip.rect[2]/2,clip.rect[1]+clip.rect[3]/2];
-    const alphaAt=(kind,ux,uy,rid)=>{const q=Compose.toDevice(fb.g,[ux,uy]),x=Math.round(q[0]),yy=Math.round(q[1]);if(x<0||yy<0||x>=fb.g.W||yy>=fb.g.H)return false;return kind==='alpha'&&!rid?fb.alpha[yy*fb.g.W+x]>0:false;};
-    const live={regions:fe.regions.filter(r=>r.triggers),hit:fe.hit};
-    const tr=fe.regions.find(r=>r.id==='tray'),trayHit=tr?Skin.hit(live,tr.rect[0]+tr.rect[2]/2,tr.rect[1]+tr.rect[3]/2,alphaAt):'';
-    window.__hits.push({clip:Skin.hit(live,at[0],at[1],alphaAt),tray:trayHit,sheet:Skin.hit(live,2,fe.size[1]-2,alphaAt),outside:Skin.hit(live,fe.size[0]-1,1,alphaAt)});
-    fig(s,cv,'skin rail · '+JSON.stringify(st));
-  }
-};
 window.renderDevices=async function(mode,D,locked,files){
   window.__images=window.__images||{};
   for(const [p,url] of Object.entries(files))if(!window.__images['skin/'+p]){const i=new Image();i.src=url;await i.decode();window.__images['skin/'+p]=i;}
-  const ms=Skin.absolutise(window.__skin,'skin/'),imgs={};for(const kd in ms.devices)imgs[kd]={device:ms.devices[kd].image,envelope:ms.devices[kd].envelope};DeviceArt.setImages(imgs,{seal:ms.media.seal,cracked:ms.media.sealCracked});
+  const ms={devices:Object.fromEntries(Object.entries(window.__skin.devices).map(([k,v])=>[k,{image:'skin/'+v.image,envelope:'skin/'+v.envelope}])),media:{seal:'skin/'+window.__skin.media.seal,sealCracked:'skin/'+window.__skin.media.sealCracked}},imgs={};for(const kd in ms.devices)imgs[kd]={device:ms.devices[kd].image,envelope:ms.devices[kd].envelope};DeviceArt.setImages(imgs,{seal:ms.media.seal,cracked:ms.media.sealCracked});
   const s=sheet(mode),M=window.M,p=DEF.palettes[mode],gc=Math.max(1,Math.round(D)),rail=Geo.railGeometry(3,64),pxmm=Geo.PX_PER_MM['24'];
   for(const kind of Geo.KINDS){
     const dv=Geo.DEVICES[kind],bay=Geo.bay(dv,pxmm,rail,false),Hh=Math.max(300,bay+200),wrap=document.createElement('div');wrap.style.cssText='display:flex;gap:6px';
@@ -203,20 +161,9 @@ window.renderDevices=async function(mode,D,locked,files){
     }
   }, skinFiles);
 
-  jobs.push(['skin-light', 'renderSkin', ['light', 2, [{volume: .62, 'network.stage': 3, 'battery.present': true, 'battery.level': .7, 'battery.state': 'dis', 'notifications.unread': 2},
-                                                       {volume: .2, 'network.stage': 0, 'network.connecting': true, 'battery.present': true, 'battery.level': .3, 'battery.state': 'chg', 'notifications.unread': 0},
-                                                       {volume: .9, 'network.stage': 4, 'battery.present': true, 'battery.level': .95, 'battery.state': 'held', 'notifications.unread': 6}], skinFiles]],
-            ['skin-dark', 'renderSkin', ['dark', 1, [{volume: .5, 'network.stage': 2, 'battery.present': false, 'notifications.unread': 1}], skinFiles]],
-            ['skin-example', 'renderSkin', ['light', 2, [{volume: .4, 'network.stage': 2, 'battery.present': true, 'battery.level': .5, 'battery.state': 'dis', 'notifications.unread': 3}], skinFiles, true]]);
-  // The example skin (quickshell/skins/example) over the default.
-  const exDir = q('skins/example'), exFiles = {};
-  const walkEx = d => fs.readdirSync(d, {withFileTypes: true}).forEach(e => { const f = path.join(d, e.name);
-    if (e.isDirectory()) walkEx(f); else if (e.name.endsWith('.png')) exFiles[path.relative(exDir, f)] = 'data:image/png;base64,' + fs.readFileSync(f).toString('base64'); });
-  walkEx(exDir);
-  await pg.evaluate(([j, f]) => { window.__example = j; window.__exampleFiles = f; }, [JSON.parse(fs.readFileSync(path.join(exDir, 'skin.json'), 'utf8')), exFiles]);
   for (const [name, fn, args] of jobs) {
     await pg.evaluate(() => { document.querySelectorAll('.sheet').forEach(s => s.remove()); });
-    try { await pg.evaluate(([f, a]) => window[f](...a), [fn, args]); if (fn === 'renderSkin') console.log('foot hits', JSON.stringify(await pg.evaluate(() => window.__hits))); } catch (e) { errors.push(name + ': ' + e.message); continue; }
+    try { await pg.evaluate(([f, a]) => window[f](...a), [fn, args]); } catch (e) { errors.push(name + ': ' + e.message); continue; }
     const el = await pg.$('.sheet');
     if (el) await el.screenshot({path: path.join(out, name + '.png')});
   }

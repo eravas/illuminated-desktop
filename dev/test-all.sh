@@ -3,7 +3,7 @@
 set -euo pipefail
 cd /project
 mkdir -p artifacts/development artifacts/portable artifacts/v3
-for suite in foundation artifacts smoke audio reload compositor greeter single-config session-ui; do
+for suite in foundation artifacts smoke audio skin reload compositor greeter single-config session-ui; do
  printf 'NOT RUN\n' > "artifacts/development/$suite.exit"
 done
 set +e
@@ -12,7 +12,7 @@ bash scripts/validate.sh > artifacts/development/lint.txt 2>&1
 lint_status=$?
 set -e
 printf '%s\n' "$lint_status" > artifacts/development/lint.exit
-for suite in foundation artifacts smoke audio reload compositor greeter single-config session-ui; do
+for suite in foundation artifacts smoke audio skin reload compositor greeter single-config session-ui; do
  case "$suite" in
   foundation) command=(python tests/runtime/run.py) ;;
   artifacts) command=(python tests/runtime/artifacts.py) ;;
@@ -23,6 +23,7 @@ for suite in foundation artifacts smoke audio reload compositor greeter single-c
   single-config) command=(python tests/runtime/single-config.py) ;;
   session-ui) command=(python tests/runtime/session-ui.py) ;;
   audio) command=(timeout 55s bash dev/audio-session.sh python tests/runtime/audio.py) ;;
+  skin) command=(timeout 200s bash dev/audio-session.sh python tests/runtime/skin.py) ;;
  esac
  set +e
  dbus-run-session -- bash dev/headless.sh "${command[@]}" > "artifacts/development/$suite-result.txt" 2>&1

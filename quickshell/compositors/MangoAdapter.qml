@@ -40,7 +40,7 @@ Scope {
             mark(channel, true); error = "";
         } catch (e) { mark(channel, false); error = String(e); }
     }
-    function context(name, allOutputs) { return Logic.context(monitors, tags, clients, name, allOutputs, ready); }
+    function context(name) { return Logic.context(monitors, tags, clients, name, false, ready); }   // this output's tags only
     function activate(space, extend) {
         if (!ready || !/^[A-Za-z0-9_.:-]+$/.test(space.output)) return;
         const monitor = monitors.find(m => m.name === space.output);
