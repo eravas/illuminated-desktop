@@ -11,6 +11,7 @@ import ".."
 Item {
     id: ask
     required property var card
+    readonly property var textFace: ({item: ask, ink: ask.card.backSurface.ink, wash: ask.card.backTextWash})   // what text here is printed on
     required property var kind   // the SessionKind
     objectName: "card-confirm"
     activeFocusOnTab: true
@@ -27,16 +28,16 @@ Item {
         spacing: 4 * ask.card.k
         visible: !ask.failed
         SplitText {
+            face: ask.textFace
             width: prompt.width; height: 32 * ask.card.k
             text: "Confirm?"; horizontalAlignment: Text.AlignHCenter
-            ink: ask.card.backSurface.ink; wash: ask.card.backTextWash; faceWidth: ask.card.width; faceHeight: ask.card.height
-            originX: prompt.x + x; originY: prompt.y + y; family: Theme.cardFamily; pixelSize: 24 * ask.card.k
+            pixelSize: 24 * ask.card.k
         }
         SplitText {
+            face: ask.textFace
             width: prompt.width; height: 24 * ask.card.k
             text: CardModel.sentence(ask.card.title); horizontalAlignment: Text.AlignHCenter
-            ink: ask.card.backSurface.ink; wash: ask.card.backTextWash; faceWidth: ask.card.width; faceHeight: ask.card.height
-            originX: prompt.x + x; originY: prompt.y + y; family: Theme.cardFamily; pixelSize: 18 * ask.card.k
+            pixelSize: 18 * ask.card.k
         }
     }
     Text {   // a refused command (for example Sleep without a returning locker)

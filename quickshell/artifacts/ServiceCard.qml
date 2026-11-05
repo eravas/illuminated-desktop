@@ -87,6 +87,7 @@ ArtifactCard {
                 readonly property string label: root.presentation.numeral ? "" : useShort ? root.shortTitle : root.title
                 readonly property string value: (root.presentation.glyph ? root.presentation.glyph + (root.presentation.value ? " " : "") : "") + root.presentation.value
                 readonly property var textWash: root.surface.chinFill ? null : root.surface.wash
+                readonly property var textFace: ({item: face, ink: root.surface.chinInk, wash: textWash})
                 readonly property real base: 17 * root.k
                 readonly property real gap: 6 * root.k
                 TextMetrics { id: titleMetrics; font.family: Theme.cardFamily; font.bold: Theme.cardBold; font.pixelSize: chin.base; text: root.title }
@@ -95,23 +96,19 @@ ArtifactCard {
                 readonly property real size: chin.base * Math.max(0.7, Math.min(1, (width - gap) / Math.max(1, labelMetrics.advanceWidth + valueMetrics.advanceWidth)))
                 SplitText {
                     id: labelText
+                    face: chin.textFace
                     height: parent.height
                     width: Math.min(implicitWidth, chin.value ? parent.width * 0.62 : parent.width)
                     text: chin.label
-                    ink: root.surface.chinInk; wash: chin.textWash
-                    faceWidth: root.width; faceHeight: root.height
-                    originX: chin.x + x; originY: chin.y + y
-                    family: Theme.cardFamily; pixelSize: chin.size
+                    pixelSize: chin.size
                 }
                 SplitText {
+                    face: chin.textFace
                     x: labelText.width + (chin.label ? chin.gap : 0)
                     height: parent.height; width: parent.width - x
                     horizontalAlignment: Text.AlignRight
                     text: chin.value
-                    ink: root.surface.chinInk; wash: chin.textWash
-                    faceWidth: root.width; faceHeight: root.height
-                    originX: chin.x + x; originY: chin.y + y
-                    family: Theme.cardFamily; pixelSize: chin.size
+                    pixelSize: chin.size
                 }
             }
         }

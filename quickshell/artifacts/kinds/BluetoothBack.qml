@@ -11,19 +11,20 @@ import ".."
 Item {
     id: bb
     required property var card
+    readonly property var textFace: ({item: bb, ink: bb.card.backSurface.ink, wash: null})   // what text here is printed on
     SplitText {
         id: bbHeader
+        face: bb.textFace
         x: bb.card.pad; y: bb.card.pad; width: bb.width - 2 * bb.card.pad; height: 30 * bb.card.k
         text: BluetoothState.failed ? bb.card.headerTitle + " · Failed" : bb.card.headerTitle
-        ink: bb.card.backSurface.ink; faceWidth: bb.card.width; faceHeight: bb.card.height; originX: x; originY: y
-        family: Theme.cardFamily; pixelSize: 24 * bb.card.k
+        pixelSize: 24 * bb.card.k
     }
     CardAction {
         id: devices
+        face: bb.textFace
         x: bb.card.pad; y: bb.height - bb.card.pad - height; width: bb.width - 2 * bb.card.pad; height: 24 * bb.card.k
         text: "Devices ›"
-        ink: bb.card.backSurface.ink; faceWidth: bb.card.width; faceHeight: bb.card.height; originX: x; originY: y
-        family: Theme.cardFamily; pixelSize: 18 * bb.card.k
+        pixelSize: 18 * bb.card.k
         onTriggered: Navigation.expand(bb.card.spec.sheet || "bluetooth")
     }
     Column {
@@ -44,11 +45,10 @@ Item {
                     font.pixelSize: 11 * bb.card.k; color: bb.card.backSurface.ink
                 }
                 SplitText {
+                    face: bb.textFace
                     anchors.fill: parent
                     text: deviceRow.modelData.name
-                    ink: bb.card.backSurface.ink; faceWidth: bb.card.width; faceHeight: bb.card.height
-                    originX: bbList.x + deviceRow.x; originY: bbList.y + deviceRow.y
-                    family: Theme.cardFamily; pixelSize: 17 * bb.card.k
+                    pixelSize: 17 * bb.card.k
                 }
             }
         }

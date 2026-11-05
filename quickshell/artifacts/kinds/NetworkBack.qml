@@ -11,19 +11,20 @@ import ".."
 Item {
     id: nb
     required property var card
+    readonly property var textFace: ({item: nb, ink: nb.card.backSurface.ink, wash: null})   // what text here is printed on
     SplitText {
         id: nbHeader
+        face: nb.textFace
         x: nb.card.pad; y: nb.card.pad; width: nb.width - 2 * nb.card.pad; height: 30 * nb.card.k
         text: NetworkState.failed ? nb.card.headerTitle + " · Failed" : nb.card.headerTitle
-        ink: nb.card.backSurface.ink; faceWidth: nb.card.width; faceHeight: nb.card.height; originX: x; originY: y
-        family: Theme.cardFamily; pixelSize: 24 * nb.card.k
+        pixelSize: 24 * nb.card.k
     }
     CardAction {   // first in focus order
         id: seeAll
+        face: nb.textFace
         x: nb.card.pad; y: nb.height - nb.card.pad - height; width: nb.width - 2 * nb.card.pad; height: 24 * nb.card.k
         text: "See All ›"
-        ink: nb.card.backSurface.ink; faceWidth: nb.card.width; faceHeight: nb.card.height; originX: x; originY: y
-        family: Theme.cardFamily; pixelSize: 18 * nb.card.k
+        pixelSize: 18 * nb.card.k
         onTriggered: Navigation.expand(nb.card.spec.sheet || "network")
     }
     Column {
@@ -37,11 +38,11 @@ Item {
             CardAction {
                 id: networkRow
                 required property var modelData
+                face: nb.textFace
                 tabStop: false
                 width: nbList.width; height: 20 * nb.card.k
                 text: (modelData.connected ? "✓ " : "") + modelData.name
-                ink: nb.card.backSurface.ink; faceWidth: nb.card.width; faceHeight: nb.card.height
-                originX: nbList.x + x; originY: nbList.y + y; family: Theme.cardFamily; pixelSize: 17 * nb.card.k
+                pixelSize: 17 * nb.card.k
                 onTriggered: if (!networkRow.modelData.connected) NetworkState.connectNetwork(networkRow.modelData, "")
             }
         }

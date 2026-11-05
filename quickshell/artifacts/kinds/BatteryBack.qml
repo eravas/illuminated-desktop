@@ -11,14 +11,15 @@ import ".."
 Item {
     id: cb
     required property var card
+    readonly property var textFace: ({item: cb, ink: cb.card.backSurface.ink, wash: cb.card.backTextWash})   // what text here is printed on
     required property var kind   // the BatteryKind: its details
     readonly property bool held: cb.kind.externalPower && !cb.kind.batteryFull
     SplitText {
         id: cbHeader
+        face: cb.textFace
         x: cb.card.pad; y: cb.card.pad; width: cb.width - 2 * cb.card.pad; height: 30 * cb.card.k
-        text: cb.card.headerTitle; ink: cb.card.backSurface.ink; wash: cb.card.backTextWash
-        faceWidth: cb.card.width; faceHeight: cb.card.height; originX: x; originY: y
-        family: Theme.cardFamily; pixelSize: 24 * cb.card.k
+        text: cb.card.headerTitle
+        pixelSize: 24 * cb.card.k
     }
     Column {
         id: stats
@@ -37,18 +38,16 @@ Item {
                 required property var modelData
                 width: stats.width
                 SplitText {
+                    face: cb.textFace
                     width: stat.width; height: 17 * cb.card.k
                     text: stat.modelData.label; bold: false
-                    ink: cb.card.backSurface.ink; wash: cb.card.backTextWash; faceWidth: cb.card.width; faceHeight: cb.card.height
-                    originX: stats.x + stat.x + x; originY: stats.y + stat.y + y
-                    family: Theme.cardFamily; pixelSize: 15 * cb.card.k
+                    pixelSize: 15 * cb.card.k
                 }
                 SplitText {
+                    face: cb.textFace
                     width: stat.width; height: 25 * cb.card.k
                     text: stat.modelData.value
-                    ink: cb.card.backSurface.ink; wash: cb.card.backTextWash; faceWidth: cb.card.width; faceHeight: cb.card.height
-                    originX: stats.x + stat.x + x; originY: stats.y + stat.y + y
-                    family: Theme.cardFamily; pixelSize: 22 * cb.card.k
+                    pixelSize: 22 * cb.card.k
                 }
             }
         }

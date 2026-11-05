@@ -11,6 +11,7 @@ import ".."
 Column {   // Sleep / Lock / Log Out, centred, no header
     id: menu
     required property var card
+    readonly property var textFace: ({item: menu.parent, ink: menu.card.backSurface.ink, wash: null})   // the face (this column is centred on it)
     required property var kind   // the SessionKind
     anchors.centerIn: parent
     width: parent.width - 2 * menu.card.pad
@@ -20,11 +21,11 @@ Column {   // Sleep / Lock / Log Out, centred, no header
         CardAction {
             id: entry
             required property string modelData
+            face: menu.textFace
             width: menu.width; height: 30 * menu.card.k
             text: menu.kind.entryText(modelData)
             horizontalAlignment: Text.AlignHCenter
-            ink: menu.card.backSurface.ink; faceWidth: menu.card.width; faceHeight: menu.card.height
-            originX: menu.x + x; originY: menu.y + y; family: Theme.cardFamily; pixelSize: 22 * menu.card.k
+            pixelSize: 22 * menu.card.k
             enabled: !SessionState.busy
             onTriggered: menu.kind.choose(entry.modelData)
         }

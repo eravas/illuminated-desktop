@@ -43,7 +43,9 @@ ArtifactCard {
 
     front: Component {
         Item {
-            id: face
+            id: frontFace
+            readonly property var textFace: ({item: frontFace, ink: root.surface.ink, wash: root.textWash})
+            readonly property var plainTextFace: ({item: frontFace, ink: root.surface.ink, wash: null})
             MaterialFace { anchors.fill: parent; surface: root.surface; front: true; artPanel: false }
             Column {
                 id: list
@@ -57,10 +59,10 @@ ArtifactCard {
                     CardAction {
                         id: action
                         required property string modelData
+                        face: frontFace.textFace
                         width: list.width; height: 26 * root.k
                         text: modelData; horizontalAlignment: Text.AlignHCenter
-                        ink: root.surface.ink; wash: root.textWash; faceWidth: root.width; faceHeight: root.height
-                        originX: list.x + x; originY: list.y + y; family: Theme.cardFamily; pixelSize: 22 * root.k
+                        pixelSize: 22 * root.k
                         enabled: !RemovableMedia.busy[root.device.id]
                         onTriggered: root.act(action.modelData)
                     }
@@ -71,7 +73,7 @@ ArtifactCard {
                 anchors.centerIn: parent
                 width: parent.width - 2 * root.pad
                 spacing: 8 * root.k
-                SplitText { width: parent.width; height: 26 * root.k; text: "Sealed"; horizontalAlignment: Text.AlignHCenter; ink: root.surface.ink; faceWidth: root.width; faceHeight: root.height; family: Theme.cardFamily; pixelSize: 22 * root.k }
+                SplitText { face: frontFace.plainTextFace; width: parent.width; height: 26 * root.k; text: "Sealed"; horizontalAlignment: Text.AlignHCenter; pixelSize: 22 * root.k }
                 SearchField {
                     id: passphrase
                     width: parent.width
@@ -81,9 +83,10 @@ ArtifactCard {
                     onAccepted: { RemovableMedia.unlock(root.device.id, text); text = ""; }
                 }
                 CardAction {
+                    face: frontFace.plainTextFace
                     width: parent.width; height: 24 * root.k
                     text: RemovableMedia.busy[root.device.id] === "unlock" ? "Breaking the seal…" : "Unlock"; horizontalAlignment: Text.AlignHCenter
-                    ink: root.surface.ink; faceWidth: root.width; faceHeight: root.height; family: Theme.cardFamily; pixelSize: 18 * root.k
+                    pixelSize: 18 * root.k
                     onTriggered: { RemovableMedia.unlock(root.device.id, passphrase.text); passphrase.text = ""; }
                 }
             }
@@ -91,16 +94,18 @@ ArtifactCard {
                 x: root.geo.chinArea.x + 5 * root.k; y: root.geo.chinArea.y
                 width: root.geo.chinArea.width - 10 * root.k; height: root.geo.chinArea.height
                 readonly property string value: RemovableMedia.errors[root.device.id] ? "Failed" : RemovableMedia.busy[root.device.id] ? RemovableMedia.busy[root.device.id] + "…" : CardModel.capacity(root.use ? root.use.used : -1, root.use ? root.use.size : root.device.size)
-                SplitText { id: chinLabel; width: Math.min(implicitWidth, parent.width * 0.55); height: parent.height; text: root.device.label; ink: root.surface.ink; wash: root.textWash; faceWidth: root.width; faceHeight: root.height; originX: parent.x; originY: parent.y; family: Theme.cardFamily; pixelSize: 17 * root.k }
-                SplitText { x: chinLabel.width + 6 * root.k; width: parent.width - x; height: parent.height; horizontalAlignment: Text.AlignRight; text: parent.value; ink: root.surface.ink; wash: root.textWash; faceWidth: root.width; faceHeight: root.height; originX: parent.x + x; originY: parent.y; family: Theme.cardFamily; pixelSize: 17 * root.k }
+                SplitText { face: frontFace.textFace; id: chinLabel; width: Math.min(implicitWidth, parent.width * 0.55); height: parent.height; text: root.device.label; pixelSize: 17 * root.k }
+                SplitText { face: frontFace.textFace; x: chinLabel.width + 6 * root.k; width: parent.width - x; height: parent.height; horizontalAlignment: Text.AlignRight; text: parent.value; pixelSize: 17 * root.k }
             }
         }
     }
     back: Component {
         Item {
             id: rear
+            readonly property var textFace: ({item: rear, ink: root.surface.ink, wash: root.textWash})
+            readonly property var plainTextFace: ({item: rear, ink: root.surface.ink, wash: null})
             MaterialFace { anchors.fill: parent; surface: root.surface; front: false }
-            SplitText { x: root.pad; y: root.pad; width: rear.width - 2 * root.pad; height: 30 * root.k; text: root.device.label; ink: root.surface.ink; wash: root.textWash; faceWidth: root.width; faceHeight: root.height; originX: x; originY: y; family: Theme.cardFamily; pixelSize: 24 * root.k }
+            SplitText { face: rear.textFace; x: root.pad; y: root.pad; width: rear.width - 2 * root.pad; height: 30 * root.k; text: root.device.label; pixelSize: 24 * root.k }
             Item {   // Confirm? (Shut Down template)
                 anchors.fill: parent
                 visible: root.backMode === "confirm"
@@ -111,8 +116,8 @@ ArtifactCard {
                 MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: root.confirmFromBack() }
                 Column {
                     anchors.centerIn: parent; width: parent.width - 2 * root.pad; spacing: 4 * root.k
-                    SplitText { width: parent.width; height: 32 * root.k; text: "Confirm?"; horizontalAlignment: Text.AlignHCenter; ink: root.surface.ink; wash: root.textWash; faceWidth: root.width; faceHeight: root.height; originX: root.pad; originY: rear.height / 2 - 16 * root.k; family: Theme.cardFamily; pixelSize: 24 * root.k }
-                    SplitText { width: parent.width; height: 24 * root.k; text: root.pendingAction; horizontalAlignment: Text.AlignHCenter; ink: root.surface.ink; wash: root.textWash; faceWidth: root.width; faceHeight: root.height; originX: root.pad; originY: rear.height / 2 + 16 * root.k; family: Theme.cardFamily; pixelSize: 18 * root.k }
+                    SplitText { face: rear.textFace; width: parent.width; height: 32 * root.k; text: "Confirm?"; horizontalAlignment: Text.AlignHCenter; pixelSize: 24 * root.k }
+                    SplitText { face: rear.textFace; width: parent.width; height: 24 * root.k; text: root.pendingAction; horizontalAlignment: Text.AlignHCenter; pixelSize: 18 * root.k }
                 }
             }
             Column {   // Rename
@@ -125,8 +130,9 @@ ArtifactCard {
                     onVisibleChanged: if (visible) { forceActiveFocus(); selectAll(); }
                     onAccepted: { RemovableMedia.rename(root.device.id, text.trim()); root.flipped = false; }
                 }
-                CardAction { width: parent.width; height: 24 * root.k; text: "Rename"; horizontalAlignment: Text.AlignHCenter; ink: root.surface.ink; wash: root.textWash; faceWidth: root.width; faceHeight: root.height; originX: root.pad; originY: rear.height / 2; family: Theme.cardFamily; pixelSize: 18 * root.k
-                    onTriggered: { RemovableMedia.rename(root.device.id, label.text.trim()); root.flipped = false; } }
+                CardAction { width: parent.width; height: 24 * root.k; text: "Rename"; horizontalAlignment: Text.AlignHCenter;        pixelSize: 18 * root.k
+                    face: rear.textFace
+                }
             }
             Column {   // Properties
                 visible: root.backMode === "properties"
@@ -139,8 +145,8 @@ ArtifactCard {
                         id: prop
                         required property var modelData
                         width: parent.width
-                        SplitText { width: prop.width; height: 15 * root.k; text: prop.modelData[0]; ink: root.surface.ink; wash: root.textWash; faceWidth: root.width; faceHeight: root.height; originX: root.pad; originY: prop.y; family: Theme.cardFamily; pixelSize: 13 * root.k }
-                        SplitText { width: prop.width; height: 19 * root.k; text: prop.modelData[1]; ink: root.surface.ink; wash: root.textWash; faceWidth: root.width; faceHeight: root.height; originX: root.pad; originY: prop.y; family: Theme.cardFamily; pixelSize: 16 * root.k }
+                        SplitText { face: rear.textFace; width: prop.width; height: 15 * root.k; text: prop.modelData[0]; pixelSize: 13 * root.k }
+                        SplitText { face: rear.textFace; width: prop.width; height: 19 * root.k; text: prop.modelData[1]; pixelSize: 16 * root.k }
                     }
                 }
             }
