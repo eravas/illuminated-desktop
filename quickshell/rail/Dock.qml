@@ -87,14 +87,18 @@ PanelWindow {
                     height: list.height
                     spacing: 8
                     Repeater {
-                        model: root.windows
+                        // Keyed by window id: a title change updates entries in place instead
+                        // of recreating every one. The model keeps each window's first object,
+                        // so an entry reads the current one by id.
+                        model: ScriptModel { values: root.windows; objectProp: "id" }
                         DockEntry {
                             required property var modelData
-                            anchors.verticalCenter: parent.verticalCenter
-                            client: modelData
+                            objectName: "dock-entry"
+                            anchors.verticalCenter: parent ? parent.verticalCenter : undefined   // null while the model removes it
+                            client: DesktopState.windowById(modelData.id) || modelData
                             tag: hoverTag
-                            pending: root.pending.indexOf(modelData.id) >= 0
-                            onChosen: function(shift) { root.choose(modelData, shift); }
+                            pending: root.pending.indexOf(client.id) >= 0
+                            onChosen: function(shift) { root.choose(client, shift); }
                         }
                     }
                 }

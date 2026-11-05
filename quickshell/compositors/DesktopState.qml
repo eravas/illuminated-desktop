@@ -23,6 +23,10 @@ Singleton {
     readonly property var focusedScreen: Quickshell.screens.find(s => s.name === focusedOutput) || Quickshell.screens[0] || null
     function context(name, allOutputs) { return adapter ? adapter.context(name, allOutputs) : ({ready:false, modelKind:kind, monitorName:name, monitorFocused:false, spaces:[], selection:[], title:"Waiting for a supported compositor"}); }
     readonly property var windows: adapter && adapter.windows ? adapter.windows : []
+    // Window entries are rebuilt on every compositor event; a view keyed by id (ScriptModel
+    // objectProp "id") keeps its delegates and reads the live entry through windowById.
+    readonly property var windowIndex: { const index = {}; for (const w of windows) index[w.id] = w; return index; }
+    function windowById(id) { return windowIndex[id] || null; }
     function focusWindow(w) { if (adapter && ready && adapter.focusWindow) adapter.focusWindow(w); }
     function bringWindow(w) { if (adapter && ready && capabilities.moveWindow) adapter.bringWindow(w); }
     function minimizeActive() { if (adapter && ready && adapter.minimizeActive) adapter.minimizeActive(); }
