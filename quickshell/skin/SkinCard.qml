@@ -13,8 +13,6 @@ ArtifactCard {
     readonly property string cardId: kind.indexOf("skin:") === 0 ? kind.slice(5) : kind
     readonly property var spec: (SkinStore.manifest.cards || {})[cardId] || ({})
     readonly property var values: ShellState.values
-    decorated: false
-    frontInset: 0; backInset: 0
     dogEar: !!spec.back
     Accessible.name: (spec.title || cardId) + (spec.value ? " " + Skin.format(spec.value, values) : "")
     onActivated: if (faceElement) { const t = faceElement.targetAt(pressX, pressY) || "#"; faceElement.trigger("click", t); }

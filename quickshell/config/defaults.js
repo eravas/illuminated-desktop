@@ -65,7 +65,6 @@ var values = {
   "dimensions": {
     "controlHeight": 36,
     "spacing": 8,
-    "inset": 12,
     "radius": 3,
     "sheetWidth": 680,
     "sheetHeight": 620,

@@ -28,7 +28,6 @@ Singleton {
     readonly property color urgent: Settings.color("urgent")
     readonly property color focusCore: Settings.color("focusCore")
     readonly property color focusFringe: Settings.color("focusFringe")
-    readonly property int inset: Settings.inset
     readonly property int gap: Settings.spacing
     readonly property int radius: Settings.radius
     readonly property int motionDuration: Settings.reducedMotion ? 0 : Settings.option("motion.lift")

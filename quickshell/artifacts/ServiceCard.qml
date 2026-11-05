@@ -25,9 +25,6 @@ ArtifactCard {
     TextMetrics { id: headerMetrics; font.family: Theme.cardFamily; font.bold: Theme.cardBold; font.pixelSize: 24 * root.k; text: root.title }
     readonly property string headerTitle: shortTitle && headerMetrics.advanceWidth > width - 2 * pad ? shortTitle : title
     aspectRatio: meta && meta.orientation === "landscape" ? 7 / 5 : 5 / 7
-    frontInset: 0
-    backInset: 0
-    decorated: false
     readonly property var geo: CardModel.layout(width, height)
     readonly property real k: geo.k
     readonly property var colours: Theme.cardColours

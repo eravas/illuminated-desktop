@@ -49,6 +49,7 @@ has been verified, and how, are in [docs/STATUS.md](docs/STATUS.md).
 | `confirm.timeout` | `reading.options.confirmTimeout` (`normal` 5 s, `long` 15 s) |
 | `reading.options.disabled`, `focusRing`, `overflow`, `stateText`, `stickySelect` | — |
 | `cards.<kind>.orientation`, `.interaction`, `.alternatives` (behaviour is code: `quickshell/artifacts/kinds/`) | — |
+| `dimensions.inset` (the margin inside plain-paper cards; every card draws its own cardstock) | — |
 | `groups.light`, `groups.session` (no longer shipped; your own definitions still work) | `groups.levels`, `groups.battery`, `groups.power` |
 
 `ui.json` entries for removed keys are ignored, not rejected.

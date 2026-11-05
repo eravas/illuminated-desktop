@@ -11,7 +11,6 @@ import "../components"
 import "../config"
 import "../services"
 import "../pages"
-import "CardKinds.js" as CardKinds
 import "kinds/Kinds.js" as Kinds
 PanelWindow {
     id: root
@@ -98,9 +97,8 @@ PanelWindow {
                 Loader {
                     id: cardLoader
                     anchors.fill: parent
-                    // CardKinds.js: the family decides the component; add families there and here.
-                    readonly property var families: ({service: serviceCard, skin: skinCard})
-                    sourceComponent: families[CardKinds.family(placement.kind)] || serviceCard
+                    // "skin:<id>" is a skin card (docs/SKINS.md); anything else a built-in kind.
+                    sourceComponent: placement.kind.indexOf("skin:") === 0 ? skinCard : serviceCard
                 }
                 Component {
                     id: serviceCard

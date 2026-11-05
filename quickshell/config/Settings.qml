@@ -147,7 +147,6 @@ Singleton {
     property int headingPixelSize: option("typography.heading")
     property int controlHeight: option("dimensions.controlHeight")
     property int spacing: option("dimensions.spacing")
-    property int inset: option("dimensions.inset")
     property int radius: option("dimensions.radius")
     property int sheetWidth: option("dimensions.sheetWidth")
     property int sheetHeight: option("dimensions.sheetHeight")

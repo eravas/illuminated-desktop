@@ -16,7 +16,6 @@ ArtifactCard {
     id: root
     required property var device
     aspectRatio: 5 / 7
-    frontInset: 0; backInset: 0; decorated: false
     readonly property var geo: CardModel.layout(width, height)
     readonly property real k: geo.k
     readonly property var use: RemovableMedia.usage[device.id] || null

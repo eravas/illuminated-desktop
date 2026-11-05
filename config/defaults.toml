@@ -79,7 +79,6 @@ pins = []
 [dimensions]
 controlHeight = 36
 spacing = 8
-inset = 12
 radius = 3
 sheetWidth = 680
 sheetHeight = 620
@@ -475,7 +474,6 @@ sheets = ["audio", "brightness", "network", "bluetooth", "media", "history", "se
 "typography.display" = { integer = true, min = 16, max = 96 }
 "dimensions.controlHeight" = { integer = true, min = 24, max = 72 }
 "dimensions.spacing" = { integer = true, min = 0, max = 48 }
-"dimensions.inset" = { integer = true, min = 0, max = 64 }
 "dimensions.radius" = { integer = true, min = 0, max = 32 }
 "dimensions.sheetWidth" = { integer = true, min = 280, max = 3840 }
 "dimensions.sheetHeight" = { integer = true, min = 240, max = 2160 }

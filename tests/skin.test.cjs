@@ -134,7 +134,3 @@ test('doctor: check.cjs applies Skin.check to the merged skin', () => {
   assert.equal(spawnSync('node', ['scripts/skin/check.cjs', 'quickshell', 'quickshell/skins/example/skin.json']).status, 0);
 });
 
-test('cards: CardKinds.family routes prefixed kinds', () => {
-  const K = load('quickshell/artifacts/CardKinds.js');
-  assert.equal(K.family('skin:inkwell'), 'skin'); assert.equal(K.family('volume'), 'service'); assert.equal(K.family('odd:x'), 'service');
-});
