@@ -1,4 +1,4 @@
-# Unreleased — simplification pass, phase 1 (deletions)
+# Unreleased — simplification pass
 
 Removes what earlier versions left behind. Nothing visible changes except the removals below.
 Phases 2–7 are in [SIMPLIFICATION-HANDOFF.md](SIMPLIFICATION-HANDOFF.md); progress and what
@@ -13,7 +13,17 @@ has been verified, and how, are in [docs/STATUS.md](docs/STATUS.md).
   (the Herbarium "Align cards to grid" toggle now sets it); the confirmation timeout comes
   only from `reading.options.confirmTimeout`.
 - **Five reading options with no implementation removed.**
-- A 2 Hz timer in the notification hub that updated an unread property is gone.
+- The notification hub's 2 Hz timer now runs only while a popup is waiting to expire, and
+  fires at its deadline. (Phase 1 removed it outright, which stopped popups expiring.)
+- **Every hand travels in from the left.** The top-origin deck (a vertical lane under the
+  bar, the fallback with the rail off, and the dock's hands) is gone; with the rail off, or
+  over IPC, a hand is dealt at the screen's middle, and a dock element deals at its height.
+- **Groups `light` and `session` no longer ship.** They duplicated `levels`/`battery` and
+  `power`. `illuminated cards session` becomes `illuminated cards power`. A partial override
+  such as `[groups.session] cards = …` now defines an incomplete group: rename it to
+  `[groups.power]`, or give it `glyph` and `label`.
+- Skin elements painted nothing under Qt 6.12 (`SkinElement.layer()` was shadowed by
+  `Item.layer`); fixed.
 - The `Materials.js` facade moved from `quickshell/materials/` to `scripts/skin/` (tests and
   the skin build only); `CommandAction.qml` moved from `tools/` to `services/`.
 - The tree is now a Git repository; `checkpoints/` (history bundles, foundation tarball) and
@@ -35,6 +45,7 @@ has been verified, and how, are in [docs/STATUS.md](docs/STATUS.md).
 | `deck.rotation`, `deck.aligned` | `reading.options.rotation` (`full` 4°, `reduced` 2°, `off` aligned) |
 | `confirm.timeout` | `reading.options.confirmTimeout` (`normal` 5 s, `long` 15 s) |
 | `reading.options.disabled`, `focusRing`, `overflow`, `stateText`, `stickySelect` | — |
+| `groups.light`, `groups.session` (no longer shipped; your own definitions still work) | `groups.levels`, `groups.battery`, `groups.power` |
 
 `ui.json` entries for removed keys are ignored, not rejected.
 

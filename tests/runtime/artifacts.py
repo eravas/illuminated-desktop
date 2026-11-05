@@ -34,17 +34,17 @@ with tempfile.TemporaryDirectory() as tmp:
             def ipc(method,*args): return run('quickshell','ipc','-p',path,'call','test',method,*map(str,args))
             def state(): return json.loads(ipc('state'))
             def settled(): return state()['phase'] > .999
-            for group in ['sound','light','connections','media','notifications','session','settings']:
+            for group in ['sound','levels','battery','connections','media','notifications','power','settings']:
                 ipc('group',group,240)
                 wait(lambda: state()['group']==group and settled(),group+' deployment')
                 s=state()
-                if group=='session':run('grim',str(OUT/'v2-power-front.png'))
+                if group=='power':run('grim',str(OUT/'v2-power-front.png'))
                 if group=="sound":run("grim",str(OUT/"cards-deployed.png"))
                 # One row on the hand's lane, left to right, clear of the rail.
                 assert all(abs(c['y']+c['height']/2-s['lane'])<1 for c in s['cards']),s['cards']
                 xs=[c['x'] for c in s['cards']];assert xs==sorted(xs) and all(x>=s['chromeLeft'] for x in xs),s['cards']
-                # Light has no back, so its flip test uses Charge; Session uses Shut Down.
-                idx=1 if group in ('session','light') else 0
+                # Power's flip test uses Shut Down; Battery's is Charge (Brightness has no back).
+                idx=1 if group=='power' else 0
                 if s['cards']:
                     angle=s['cards'][idx]['rotation']
                     ipc('select',idx)
@@ -61,14 +61,14 @@ with tempfile.TemporaryDirectory() as tmp:
                     point=json.loads(ipc('returnPoint',idx))
                     run(pointer,'1280','720','move',str(round(point['x'])),str(round(point['y'])),'down','up')
                     wait(lambda: state()['cards'][idx]['flip']<.001,'flip reverse')
-                if group=='light':
+                if group=='levels':
                     wait(lambda:state()['brightness']['available'],'safe brightness backend')
-                    c=state()['cards'][0];x=round(c['x']+c['width']/2);y=round(c['y']+c['height']/2)
+                    c=state()['cards'][1];x=round(c['x']+c['width']/2);y=round(c['y']+c['height']/2)
                     before=state()['brightness']['value']
                     run(pointer,'1280','720','move',str(x),str(y),'down','move',str(x+35),str(y),'up')
                     wait(lambda:state()['brightness']['value']>before+.05,'deployed brightness drag through safe CLI backend')
                     run('grim',str(OUT/'v2-brightness-fill.png'))
-                if group=='session':
+                if group=='power':
                     assert s['pages']==1
                     assert [c['kind'] for c in s['cards']]==['suspend','poweroff','reboot']
                     ipc('page',1);wait(lambda: state()['page']==0 and settled(),'pagination')
@@ -116,7 +116,7 @@ with tempfile.TemporaryDirectory() as tmp:
             ipc('close');wait(lambda:state()['phase']<.001,'keyboard group close')
             print('PASS: real keyboard card selection, flip, back action, expanded-sheet focus and return-to-origin',flush=True)
             # Rapid transitions: last request wins without stale timers or destroyed models.
-            for name in ['sound','session','connections','sound']:
+            for name in ['sound','power','connections','sound']:
                 ipc('group',name,240);time.sleep(.05)
             wait(lambda: state()['group']=='sound' and settled(),'interrupted group')
             run('swaymsg','output HEADLESS-1 mode 320x240')
@@ -192,7 +192,7 @@ with tempfile.TemporaryDirectory() as tmp:
             assert not (OUT/'suspend-substitute').exists(),'suspend ran after lock failure'
             ipc('failingLock','false')
             print('PASS: failed locker prevents suspend (harmless command substitutes)',flush=True)
-            ipc('group','session',240);wait(settled,'confirmation group')
+            ipc('group','power',240);wait(settled,'confirmation group')
             ipc('flip',1);wait(lambda:state()['session']['pending']=='poweroff','card confirmation selection')
             wait(lambda:state()['session']['pending']=='','confirmation expiration',seconds=8)
             wait(lambda:state()['cards'][1]['flip']<.001,'expired confirmation turns the card back')

@@ -86,7 +86,7 @@ with tempfile.TemporaryDirectory() as directory:
                     click(c['x'] + c['width'] / 2, c['y'] + c['height'] / 2)
 
                 def open_deck():
-                    ipc('group', 'session', width / 2)
+                    ipc('group', 'power', height / 2)
                     wait(lambda: state()['phase'] > .999, 'deploy')
 
                 def turn(index):

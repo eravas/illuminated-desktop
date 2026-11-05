@@ -34,8 +34,8 @@ too big for one page, are also shown in the Herbarium sheet and in
 | in-shell choices | `~/.config/illuminated/ui.json` | the Herbarium sheet |
 
 Later layers win. **Tables merge key by key; arrays and scalars replace.**
-Overriding `groups.session.cards` changes only that list. Every other group,
-and the session group's glyph, stay as they are.
+Overriding `groups.power.cards` changes only that list. Every other group,
+and the power group's glyph, stay as they are.
 
 A key set in `config.toml` is *pinned*. The shell will not override it from the
 Herbarium sheet; it tells you to change it in the file instead. A choice made in
@@ -76,7 +76,7 @@ hands = ["levels", "connections", "sound", "power"]   # hands dealt from the rai
 [clock]
 timeFormat = "h:mm ap"
 
-[groups.session]
+[groups.power]
 cards = ["suspend", "poweroff"]      # drop Reboot; Sleep's back still offers Lock and Log Out
 
 [cards.notifications]

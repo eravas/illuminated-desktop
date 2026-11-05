@@ -197,13 +197,6 @@ cards = ["volume", "microphone", "outputs"]
 sheet = ""
 show = "always"
 
-[groups.light]
-glyph = "☀"
-label = "Light"
-cards = ["brightness", "battery"]
-sheet = ""
-show = "always"
-
 [groups.connections]
 glyph = "↔"
 label = "Connections"
@@ -222,13 +215,6 @@ show = "player"
 glyph = "✉"
 label = "Correspondence"
 cards = ["notifications", "dnd"]
-sheet = ""
-show = "always"
-
-[groups.session]
-glyph = "⏻"
-label = "Session"
-cards = ["suspend", "poweroff", "reboot"]
 sheet = ""
 show = "always"
 
