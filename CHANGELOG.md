@@ -36,6 +36,12 @@ has been verified, and how, are in [docs/STATUS.md](docs/STATUS.md).
   qmllint over your skin. Visible changes: rail objects sit 1–3 px differently (whole-pixel
   boxes), and their art is scaled from 1× or 2× bakes when the output is not the 24″ 1080p
   scale, instead of being dithered at the exact size.
+- **Vellum, focus halos and level cards no longer repaint pixel by pixel.** The vellum interior
+  is native (an exact texture overlay); edges and halos are images painted once per palette and
+  shared; level cards paint each look once and show the level by clipping. First launcher open
+  went from 8.6 s to under 0.1 s of GUI time on the test machine; a volume drag paints nothing.
+  The skin needs `materials/vellum-shade.png` (`node scripts/skin/build-shade.cjs <skin>` after
+  replacing `vellum.png`; `vellumShade` in skin.json).
 - Skin elements painted nothing under Qt 6.12 (`SkinElement.layer()` was shadowed by
   `Item.layer`); fixed.
 - The `Materials.js` facade moved from `quickshell/materials/` to `scripts/skin/` (tests and

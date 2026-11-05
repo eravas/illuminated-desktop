@@ -234,56 +234,58 @@ Not moved: the `mkdir` in Settings.qml and NotificationHub's directory bootstrap
 `quickshell -p` without `apply` must still be able to write `ui.json` and history, and
 FileView cannot create directories.
 
-## Phase 5: rendering (partly done; the rest is reasoned out below)
+## Phase 5: rendering (done as far as it goes without shaders)
 
 | Commit | Change | Label |
 | --- | --- | --- |
 | perf: opt-in paint profiling | step 1 instrument | V |
-| perf: paint each canvas once at startup | SkinStore no longer changes image URLs on its first loads (the 700 ms material decode ran twice and every canvas repainted); canvases wait for the skin's materials instead of painting fallbacks first | V |
-| perf: cache finished vellum; foundation waits for state | repeat paints are a cached `putImageData`; no double paint request on resize | V |
+| perf: paint each canvas once at startup | SkinStore no longer changes image URLs on its first loads (the 700 ms material decode ran twice and every canvas repainted); canvases wait for the skin's materials | V |
+| perf: cache finished vellum; foundation waits for state | | V |
+| perf: vellum from native items | interior = Rectangle + shade tile (exact); edges = shared nine-slice painted once; wash painted once per strip | V (screenshots), L (1.25×, 2×) |
+| perf: focus halo as a shared nine-slice | | V (screenshot) |
+| perf: card faces in layers; a level change paints nothing | dry face + wet layer clipped at the level + moved edge strip + foil cross-fade + art saturation/luminance overlays | V (artifacts, audio, session-ui; screenshot), L (look on GPU) |
 
-**D2 spike, result.** The vellum pixel is `paper × f(texture)`. The interior *can* be
-palette-independent and exact: a `Rectangle` at `paper × (1 + amp)` under a black tile with
-alpha `(1 − 2t)/2` at opacity `2·amp/(1 + amp)`. The fray (cut cells and a fray-colour band) and
-the dithered accent wash need palette-coloured noise at given pixels, and without shaders Qt
-Quick can neither tint a greyscale image nor mask a Rectangle: (b) cannot reproduce them. (a)
-does not fit either as specified. The wash fades over the strip's length, which differs per
-surface, so a fixed bake would stretch the dither; nine-slice edges cannot keep the `offX/offY`
-texture phase; Node would become required for `apply`. So **neither D2 option was
-implemented**. Vellum and card faces stay Canvas painters, made cheaper (above). No screenshots
-were taken of (a)/(b) because neither could be built faithfully. **Decision needed from you:**
-accept a visual change (smooth gradient wash, or fixed-length dither stretched), or keep
-Canvas for these two.
+**D2, as applied: neither (a) nor (b) — option (c), runtime bakes into shared images.** (b)
+works exactly for the vellum interior: a `Rectangle` at `paper × (1 + amp)` under a black tile
+with alpha `1 − r` (`materials/vellum-shade.png`, built by `scripts/skin/build-shade.cjs`) at
+opacity `2·amp/(1 + amp)` *is* the painter's `paper × (1 + (r − ½)·2·amp)`, and it keeps texture
+continuity through `offX/offY`. It cannot produce palette-coloured noise (fray, dithered wash,
+halo fringe) without shaders. (a) would make Node required for `apply` and cannot know strip
+lengths. So the coloured edge pieces are painted **once per palette/grain/style at runtime**
+into nine-slice images shared by every surface (`materials/Baked.qml`, data URLs). The
+painting canvas exists only while painting. Node stays optional.
 
-Not done, and why: step 3 FocusHalo (a halo is 15–50 ms; corner radius varies with card size,
-so a nine-slice needs a bake per radius per palette per style); step 4 vellum (above); step 5
-card faces (palette-coloured, same constraint; the level fill is the remaining per-drag cost,
-~90 ms a paint); step 7 the decode path (MaterialFields still feeds vellum and faces); step 8
-the Context2D harness stays (it still tests the shell's painters). The structure test was
-replaced by qmllint (step 8's other half): a typo of each class (unknown type, missing import)
-fails `validate.sh`.
+What still paints per surface, once: the accent wash on the rail and dock (its fade depends on
+the strip's length) and the card faces (per look, not per level).
+
+Not done, and why:
+- **Step 7, removing the decode path.** `MaterialFields` still feeds the edge bakes, the wash and
+  the card painters (sheen, glint, patina). Removing it means dropping those textures.
+- **Step 8.** The Context2D harness stays: it tests the painters that still run.
+- **Spike contact sheet.** None was made. Old/new comparisons were made from `grim` captures in
+  this runtime instead (vellum edges, launcher, halo, Light card at 64 %).
+
+Measured cost moved, not only saved: a level card has 4–5 mostly transparent layers instead of
+one, and the **software** renderer blends them on the CPU. A volume step with the Levels hand
+out takes ~600 ms here against ~130 ms before, with **zero paints** (before: one ~90 ms face
+repaint per step). On the GPU renderer, blending a few textures is cheap. Checklist item 19.
 
 **Foundation hypothesis, settled.** The intermittent launcher-reopen failure was first-paint
 time: Escape was processed 2–4 s late because the launcher's vellum and the rail's skin elements
-painted on the GUI thread, and the test's next toggle reused the closing surface. After the
-skin and vellum changes the loop passes every run (and the test now waits for the surface to go
-rather than 0.65 s). The steps after it had never run: one called a wrapper command that does not
+painted on the GUI thread, and the test's next toggle reused the closing surface. The loop now
+passes every run. The steps after it had never run: one called a wrapper command that does not
 exist (`toggleLauncher`), and the last one fails because under Sway the launcher does not get the
-keyboard in that sequence. (A hand dealt right after the launcher closes gets no keyboard enter
-either.) This is Sway's layer-shell focus handling under test conditions, unverified on
-Hyprland: checklist item 13.
+keyboard in that sequence (checklist item 13).
 
 ### After-numbers (same machine and method as the before-numbers)
 
-| Step | Before | After |
-| --- | --- | --- |
-| startup: GUI answering | 449 ms | 380 ms |
-| startup: canvas paint time in the next 3 s | 2187 ms (22 paints) | 1098 ms (8 paints) |
-| first launcher open: GUI answering again | 8639 ms | 1043 ms |
-| first hand deal: GUI answering again | 3246 ms | 613 ms |
-| 2 s volume drag (20 steps): wall time | 19529 ms | 3293 ms |
-| Canvas items alive at idle, one output | 11 | 5 (rail and dock vellum, three device objects) |
-| Canvas items alive with a hand out | 16 | 10 |
+| Step | Before | After Phase 6 | Now |
+| --- | --- | --- | --- |
+| startup: canvas paint time in the next 3 s | 2187 ms (22 paints) | 1098 ms (8) | ~1000 ms (edge bakes, rail wash, device objects) |
+| first launcher open: GUI answering again | 8639 ms | 1043 ms | 94 ms (0 paints of the sheet) |
+| first hand deal: GUI answering again | 3246 ms | 613 ms | 1.1–1.7 s (each look's layers paint once) |
+| 2 s volume drag: paints | 34 (8.3 s of paint) | 17 | 0 |
+| Canvas items alive at idle, one output | 11 | 5 | 5 (rail and dock wash, three device objects) |
 
 ## Phase 6: QML skins (done)
 
@@ -391,3 +393,5 @@ Grows with each phase. From Phase 1:
     software renderer here does not render shader effects).
 18. First-open timings: `ILLUMINATED_PROFILE=1 quickshell -p ~/.config/quickshell/illuminated/shell.qml`
     then open the launcher and a hand; the paint lines in the log give the per-surface costs.
+19. Dragging the volume or brightness card on the GPU renderer: smooth, and the fill's dithered
+    edge follows the pointer; compare the Light card at a mid level with v7.
