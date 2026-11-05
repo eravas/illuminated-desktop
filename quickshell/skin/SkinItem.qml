@@ -25,6 +25,8 @@ Item {
 
     // The rail or dock the object is on ({pxmm, screen, tag, handShown(name)}); set by its layout.
     property var host: null
+    // Objects created after their layout (in a Repeater or Loader of the skin's) find it here.
+    onParentChanged: if (!host) for (let p = parent; p; p = p.parent) if (p.skinHost === true) { host = p; break; }
     readonly property real pxmm: host && host.pxmm > 0 ? host.pxmm : 1920 / 531
     readonly property real unit: units === "px" ? 1 : pxmm
     function mm(v) { return v * pxmm; }

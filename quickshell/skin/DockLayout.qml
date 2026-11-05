@@ -6,6 +6,7 @@ Item {
     property list<Item> before
     property list<Item> after
     property var dock: null                // set by rail/Dock.qml
+    readonly property bool skinHost: true
     readonly property real pxmm: dock ? dock.pxmm : 0
     readonly property var screen: dock ? dock.screen : null
     readonly property var tag: dock ? dock.tag : null

@@ -11,6 +11,7 @@ ColumnLayout {
     id: root
     spacing: 0
     property var rail: null                // set by rail/Rail.qml
+    readonly property bool skinHost: true
     property Item foot: null
     readonly property real pxmm: rail ? rail.pxmm : 0
     readonly property var screen: rail ? rail.screen : null
