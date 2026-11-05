@@ -1,6 +1,7 @@
+pragma ComponentBehavior: Bound
 import QtQuick
 import "../CardModel.js" as CardModel
-// What a ServiceCard asks of its kind (kinds/Kinds.js names the adapter). The card keeps
+// What a ServiceCard asks of its kind (kinds/Kinds.js names the adapterRoot). The card keeps
 // flip, selection, gesture, face and chin; the kind binds them to its service. Only the
 // card's own kind is instantiated, so a volume card binds no battery service.
 Item {

@@ -1,3 +1,4 @@
+pragma ComponentBehavior: Bound
 import QtQuick
 import "../../services"
 import "../../config"
@@ -6,7 +7,7 @@ import ".."
 // Lock, Sleep, Shut Down, Reboot, Log Out. A card with alternatives turns to a menu (Sleep);
 // a confirming card turns to Confirm? (Shut Down, Reboot); otherwise a click acts (Lock).
 CardKind {
-    id: adapter
+    id: adapterRoot
     readonly property string name: card.kind
     readonly property string mode: CardModel.sessionMode(card.spec)
     readonly property var entries: mode === "menu" ? [name].concat(card.spec.alternatives) : []
@@ -15,8 +16,8 @@ CardKind {
     property bool inlineArmed: false
     presentation: CardModel.power(name, card.colours)
     back: mode === "menu" ? menu : mode === "confirm" ? confirm : null
-    Component { id: menu; MenuBack { card: adapter.card; kind: adapter } }
-    Component { id: confirm; ConfirmBack { card: adapter.card; kind: adapter } }
+    Component { id: menu; MenuBack { card: adapterRoot.card; kind: adapterRoot } }
+    Component { id: confirm; ConfirmBack { card: adapterRoot.card; kind: adapterRoot } }
     // Runs a session action now; the deck closes once the command has started.
     function act(action) {
         SessionState.select(action);
@@ -41,7 +42,7 @@ CardKind {
         const t = Settings.card(entry).title || entry;
         return SessionState.pending === entry && Settings.card(entry).confirm !== false ? CardModel.sentence(t) + "?" : t;
     }
-    Timer { id: inlineArm; interval: Settings.confirmArmDelay; onTriggered: adapter.inlineArmed = true }
+    Timer { id: inlineArm; interval: Settings.confirmArmDelay; onTriggered: adapterRoot.inlineArmed = true }
     function activate() { if (mode !== "act") return false; act(name); return true; }
     function flipped(isFlipped) {
         if (mode === "confirm") { if (isFlipped) SessionState.select(name); else if (owned) SessionState.cancel(); }
@@ -54,8 +55,8 @@ CardKind {
         target: SessionState
         // Expired, cancelled or replaced by another card's confirmation: turn back (cancel).
         function onPendingChanged() {
-            if (adapter.mode === "confirm" && adapter.card.flipped && SessionState.pending !== adapter.name && !adapter.confirming && SessionState.error === "")
-                adapter.card.flipped = false;
+            if (adapterRoot.mode === "confirm" && adapterRoot.card.flipped && SessionState.pending !== adapterRoot.name && !adapterRoot.confirming && SessionState.error === "")
+                adapterRoot.card.flipped = false;
         }
     }
 }
