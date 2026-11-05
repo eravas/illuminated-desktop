@@ -1,0 +1,15 @@
+BatteryBack 1.0 BatteryBack.qml
+BatteryKind 1.0 BatteryKind.qml
+BluetoothBack 1.0 BluetoothBack.qml
+BluetoothKind 1.0 BluetoothKind.qml
+CardKind 1.0 CardKind.qml
+ConfirmBack 1.0 ConfirmBack.qml
+GenericBack 1.0 GenericBack.qml
+InfoKind 1.0 InfoKind.qml
+LevelKind 1.0 LevelKind.qml
+MenuBack 1.0 MenuBack.qml
+NetworkBack 1.0 NetworkBack.qml
+NetworkKind 1.0 NetworkKind.qml
+OutputsBack 1.0 OutputsBack.qml
+ProfileKind 1.0 ProfileKind.qml
+SessionKind 1.0 SessionKind.qml
