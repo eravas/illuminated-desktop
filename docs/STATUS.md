@@ -37,12 +37,14 @@ the foundation and artifacts failures track GUI-thread paint time (Phase 5 measu
 
 | Check | Result |
 | --- | --- |
-| Node tests | 169/169 |
-| Python unittest | 79/79 |
-| qmllint (non-strict) | exit 0, 85 warnings (Quickshell type-metadata gaps) |
-| foundation | **fail**: launcher reopen, same cause as baseline (first-paint stall) |
-| artifacts | pass; intermittent timing failures remain (about 1 run in 3) |
-| smoke, audio, reload, compositor, greeter, single-config, session-ui | pass |
+| Node tests | 61/61 (the 100+ per-file structure tests are replaced by fatal qmllint `[import]` checks) |
+| Python unittest | 83/83 |
+| qmllint (non-strict) | exit 0, 82 warnings (Quickshell type-metadata gaps); `[import]` warnings are now fatal |
+| artifacts, smoke, audio, skin (new), reload, compositor, greeter, single-config, session-ui | pass |
+| foundation | **fail** at its last step (launcher does not get the keyboard under Sway after a hand and an output hotplug; see Phase 5); the launcher-reopen loop that failed at baseline now passes every run |
+
+artifacts and reload still fail about one run in five here on GUI-thread timing (card faces and
+vellum are still Canvas painters); both were flaky at baseline too.
 
 ## Phase 0: repository (done)
 
@@ -213,6 +215,141 @@ the launcher surface is destroyed about 3–6 s after Escape was sent, so the se
 `illuminated launcher` (a toggle) arrives while the first is still open. The failure tracks
 first-paint time of the launcher's own vellum and the material decode, not the rail.
 
+## Phase 4: settings layer (done, with one deliberate exception)
+
+| Commit | Change | Label |
+| --- | --- | --- |
+| refactor: read single-use settings through Settings.option | 31 aliases removed (Settings.qml 176 → 145 lines) | V |
+| build: generate Reading.js option lists from the schema | `illuminated defaults --write-json` writes `OPTIONS`; drift test | U |
+| fix: card faces repaint on a colour-vision change again | a regression of the first commit (handler on a removed signal) | V (no warnings in any suite log) |
+
+Found: **a typed property is a change filter.** An inline `Settings.option()` makes its binding
+depend on the whole `ui`/`resolved` objects, so every `ui.json` write re-runs it. Where the
+binding builds an object, array or model (launcher geometry and pins, `deckOptions`,
+`rail.hands`, `Theme.wash`, the Hyprland window list) that cascaded into relayouts and repaints
+and the reload suite timed out 3 of 3. Those 14 keys stay named properties, commented. The rule
+"one access style" does not hold without that exception.
+
+Not moved: the `mkdir` in Settings.qml and NotificationHub's directory bootstrap. Starting
+`quickshell -p` without `apply` must still be able to write `ui.json` and history, and
+FileView cannot create directories.
+
+## Phase 5: rendering (partly done; the rest is reasoned out below)
+
+| Commit | Change | Label |
+| --- | --- | --- |
+| perf: opt-in paint profiling | step 1 instrument | V |
+| perf: paint each canvas once at startup | SkinStore no longer changes image URLs on its first loads (the 700 ms material decode ran twice and every canvas repainted); canvases wait for the skin's materials instead of painting fallbacks first | V |
+| perf: cache finished vellum; foundation waits for state | repeat paints are a cached `putImageData`; no double paint request on resize | V |
+
+**D2 spike, result.** The vellum pixel is `paper × f(texture)`. The interior *can* be
+palette-independent and exact: a `Rectangle` at `paper × (1 + amp)` under a black tile with
+alpha `(1 − 2t)/2` at opacity `2·amp/(1 + amp)`. The fray (cut cells and a fray-colour band) and
+the dithered accent wash need palette-coloured noise at given pixels, and without shaders Qt
+Quick can neither tint a greyscale image nor mask a Rectangle: (b) cannot reproduce them. (a)
+does not fit either as specified. The wash fades over the strip's length, which differs per
+surface, so a fixed bake would stretch the dither; nine-slice edges cannot keep the `offX/offY`
+texture phase; Node would become required for `apply`. So **neither D2 option was
+implemented**. Vellum and card faces stay Canvas painters, made cheaper (above). No screenshots
+were taken of (a)/(b) because neither could be built faithfully. **Decision needed from you:**
+accept a visual change (smooth gradient wash, or fixed-length dither stretched), or keep
+Canvas for these two.
+
+Not done, and why: step 3 FocusHalo (a halo is 15–50 ms; corner radius varies with card size,
+so a nine-slice needs a bake per radius per palette per style); step 4 vellum (above); step 5
+card faces (palette-coloured, same constraint; the level fill is the remaining per-drag cost,
+~90 ms a paint); step 7 the decode path (MaterialFields still feeds vellum and faces); step 8
+the Context2D harness stays (it still tests the shell's painters). The structure test was
+replaced by qmllint (step 8's other half): a typo of each class (unknown type, missing import)
+fails `validate.sh`.
+
+**Foundation hypothesis, settled.** The intermittent launcher-reopen failure was first-paint
+time: Escape was processed 2–4 s late because the launcher's vellum and the rail's skin elements
+painted on the GUI thread, and the test's next toggle reused the closing surface. After the
+skin and vellum changes the loop passes every run (and the test now waits for the surface to go
+rather than 0.65 s). The steps after it had never run: one called a wrapper command that does not
+exist (`toggleLauncher`), and the last one fails because under Sway the launcher does not get the
+keyboard in that sequence. (A hand dealt right after the launcher closes gets no keyboard enter
+either.) This is Sway's layer-shell focus handling under test conditions, unverified on
+Hyprland: checklist item 13.
+
+### After-numbers (same machine and method as the before-numbers)
+
+| Step | Before | After |
+| --- | --- | --- |
+| startup: GUI answering | 449 ms | 380 ms |
+| startup: canvas paint time in the next 3 s | 2187 ms (22 paints) | 1098 ms (8 paints) |
+| first launcher open: GUI answering again | 8639 ms | 1043 ms |
+| first hand deal: GUI answering again | 3246 ms | 613 ms |
+| 2 s volume drag (20 steps): wall time | 19529 ms | 3293 ms |
+| Canvas items alive at idle, one output | 11 | 5 (rail and dock vellum, three device objects) |
+| Canvas items alive with a hand out | 16 | 10 |
+
+## Phase 6: QML skins (done)
+
+| Commit | Change | Label |
+| --- | --- | --- |
+| feat: QML skins | qs.skin API, default and example skins in QML, bake, apply overlay, doctor qmllint, deletions | V (skin suite), L (sizes on real outputs) |
+
+The skin suite covers: default rail objects by objectName, hover tag, a scroll lowering the
+PipeWire virtual sink's volume, a click dealing Levels; the example's seal dealing Desk with
+its skin card rendering, and its dock button toggling DND; a one-file `Vial.qml` override
+replacing only the vial; an old-format skin warned about (apply and shell) and ignored.
+
+Choices: `skin.json` data merges key by key; QML is per file (docs/SKINS.md). Baked sheets are
+named `-2x`, not `@2x`: with `@2x` in the name Qt treats the image as 2-DPR and halves
+`sourceSize`, which breaks frame arithmetic. Hit polygons for the nib and paperclip are the
+convex hulls of their baked art (`scripts/skin/hulls.json`), padded 1 mm. `Settings.card/group`
+are config-only and `SkinStore.card/group` add the skin's, which removes the `config/ → skin/`
+import. Found: `print` is an illegal QML property name, and `clip` (PaperCorner) shadowed
+`Item.clip`.
+
+Visible differences: objects sit 1–3 px differently (boxes snapped to whole pixels; fractional
+boxes made Qt filter the dither). Off the 24″ 1080p scale the art is scaled from the 1× or 2×
+bake rather than dithered at the exact size. The bake resamples sources like Qt's canvas
+(`imageSmoothingQuality: low`), but glass and steel show slightly less stipple than before.
+
+## Phase 7: lock and suspend
+
+| Commit | Change | Label |
+| --- | --- | --- |
+| feat: Sleep locks in-process with the shell's lock screen | LockState; suspend after `secure`; fallback by `lock.timeout`/`lock.fallback` | V (session-ui under Sway), U (fallback branch) |
+
+**Logind delay inhibitor (design note, L).** Today "never suspend an unlocked session" holds
+only for the Sleep card. Two ways to extend it to lid close, the power key, idle and
+`systemctl suspend`:
+
+1. **hypridle** (checked against hypridle's source, 2026-11-03): `before_sleep_cmd =
+   illuminated lock` (or `loginctl lock-session` with `lock_cmd = illuminated lock`) and
+   `general:inhibit_sleep = 3`. hypridle then holds a logind *delay* inhibitor until the
+   compositor reports the session locked through `hyprland-lock-notify-v1`. That works with
+   any ext-session-lock locker, this shell's included. 0 = off; 1 = released after
+   `before_sleep_cmd` runs; 2 (default) = 3 only when the commands mention hyprlock, else 1.
+   With our locker, 2 means 1, which does not wait for the lock: set 3 explicitly.
+2. **The shell** holding `systemd-inhibit --what=sleep --mode=delay` and locking on logind's
+   `PrepareForSleep(true)`, releasing after `secure`. That needs a logind D-Bus client in the
+   shell, plus re-taking the inhibitor after every resume.
+
+**Recommendation: 1.** It is configuration, not code; hypridle already runs on this rice; and the
+lock confirmation comes from the compositor, not from polling. With it in place, the
+following become removable: the "Sleep refuses" branch and `commands.lockReturnsWhenReady`
+(Sleep could run `systemctl suspend` and let the inhibitor lock first); `lock.timeout` and
+`lock.fallback` stay for keybind locking through `illuminated lock`.
+
+## Size, overall
+
+Lines (QML/JS/Python/CJS, excluding generated `defaults.js`), from the imported Phase 1 tree to
+now: quickshell 7470 → 7592, lib 1471 → 1545, tests 3367 → 3610, scripts 972 → 1474. The shell
+lost SkinElement, Registry and the per-kind branches but gained the skin API and card adapters;
+the skin engine's Compose/Skin code moved to `scripts/skin/` as the bake. The measure that went
+down is runtime work (after-numbers above), not lines. Config keys: −51 since Phase 1.
+
+## Decisions as applied
+
+- D1 QML skins: done (Phase 6).
+- D2: neither option; the spike shows why (Phase 5). Needs your call.
+- D3 keep `features.lock`: kept; Sleep now locks through it in-process (Phase 7).
+
 ## Inspiron checklist (L)
 
 Grows with each phase. From Phase 1:
@@ -237,3 +374,20 @@ Grows with each phase. From Phase 1:
     the dock's height, under a permanent dock.
 11. Cards: Sound, Light, Battery, Wi-Fi, Bluetooth, Sleep, Shut Down behave as before (click,
     drag, dog-ear, backs). Battery's back shows Profile, Remaining and Limit on the laptop.
+12. Skins at life size: the rail objects look as before (compare a screenshot with v7) at 1×
+    and at 1.25× (the 2× art is used) and 2×; the nib and the paperclip take clicks on their
+    outline (try just off the tip).
+13. Launcher right after dismissing a hand (`illuminated cards levels`, Escape, then the
+    launcher bind at once): typing goes to the search field. Also deal a hand right after
+    closing the launcher: arrow keys move the selection.
+14. Hotplug a monitor and unplug it, then open the launcher: typing works.
+15. Lock in-process: with `features.lock = true`, Sleep from the Power hand shows the lock
+    screen first and the machine suspends only after it is up; on resume a real PAM login
+    unlocks. Without a confirmed lock in `lock.timeout`, `lock.fallback` locks before suspend.
+16. hypridle (Phase 7 note): set `inhibit_sleep = 3` with `before_sleep_cmd = illuminated lock`,
+    then close the lid: the lock screen is up on resume and was up before sleep (`journalctl -b
+    -u systemd-logind` shows the delay).
+17. Loupe `MultiEffect` (materials/Loupe.qml) renders the magnified numeral on Hyprland (the
+    software renderer here does not render shader effects).
+18. First-open timings: `ILLUMINATED_PROFILE=1 quickshell -p ~/.config/quickshell/illuminated/shell.qml`
+    then open the launcher and a hand; the paint lines in the log give the per-surface costs.
