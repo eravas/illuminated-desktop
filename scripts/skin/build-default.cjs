@@ -212,6 +212,7 @@ function example(geo) {
   const lfile = path.join(out, 'loupes.json');
   if (fs.existsSync(lfile)) m.loupes = JSON.parse(fs.readFileSync(lfile, 'utf8'));
   m.initial = 'materials/initial.png';
+  m.vellumShade = 'materials/vellum-shade.png';   // scripts/skin/build-shade.cjs
   // skin.json keeps plain asset data; the objects' looks go to elements.json, the source of
   // scripts/skin/bake-elements.cjs (run it next: it bakes them into <skin>/elements/).
   const LOOKS = ['units', 'inks', 'sheets', 'images', 'elements'], data = {}, looks = {};

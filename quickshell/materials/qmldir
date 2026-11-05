@@ -7,3 +7,4 @@ DeviceObject 1.0 DeviceObject.qml
 FocusHalo 1.0 FocusHalo.qml
 singleton MaterialFields 1.0 MaterialFields.qml
 singleton Profile 1.0 Profile.qml
+singleton Baked 1.0 Baked.qml

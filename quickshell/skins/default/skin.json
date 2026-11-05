@@ -156,5 +156,6 @@
       }
     }
   },
-  "initial": "materials/initial.png"
+  "initial": "materials/initial.png",
+  "vellumShade": "materials/vellum-shade.png"
 }

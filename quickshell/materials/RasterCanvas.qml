@@ -14,10 +14,12 @@ Item {
     readonly property int deviceWidth: Math.max(1, Math.round(width * dpr))
     readonly property int deviceHeight: Math.max(1, Math.round(height * dpr))
     property int coalesce: 0
+    readonly property alias canvasItem: canvas
     // ILLUMINATED_PROFILE=1 logs each paint's duration: "paint <kind> <w>x<h> <ms>".
     property string kind: objectName || (parent ? String(parent).split("_QML")[0].split("(")[0] : "?")
     // Handlers: onPainting: function(ctx, w, h) { … } — w, h in device px.
     signal painting(var ctx, int w, int h)
+    signal drawn()             // the drawing has reached the canvas image (toDataURL is current)
     // Images for drawImage (skin art). One rule for every user: images(urls) is "ready",
     // "loading" (this canvas repaints when they arrive) or "failed"; build-once-then-release
     // goes through withImages(), which keeps nothing decoded after it returns.
@@ -45,6 +47,7 @@ Item {
         renderStrategy: Canvas.Cooperative
         // A size change repaints by itself (Canvas follows canvasSize); asking again painted twice.
         onImageLoaded: root.repaint()
+        onPainted: root.drawn()
         onPaint: {
             if (root.width <= 0 || root.height <= 0) return;
             const t0 = Profile.enabled ? Date.now() : 0;
