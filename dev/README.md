@@ -58,6 +58,23 @@ MPRIS/tray peers, Mango server and greetd authentication are explicit fixtures;
 their real transports/native clients run, but they are not real user applications,
 a Mango compositor or PAM. Session actions are harmless marker substitutes.
 
+## Docker-less cloud host (chroot)
+
+On a host without a Docker daemon but with root (for example a Claude Code cloud
+container, Ubuntu), build the same userspace as a directory and run in it:
+
+```sh
+sudo bash dev/cloud-setup.sh            # Arch bootstrap + pinned archive + Mango/mmsg; idempotent
+sudo bash dev/run-chroot.sh bash dev/test-all.sh
+```
+
+`cloud-setup.sh` is self-contained so it can be the environment's setup script.
+`tests/test_cloud_runtime.py` keeps its archive date and package list equal to the
+Dockerfile's. `run-chroot.sh` gives the same contract as `run.sh`: new mount, PID and
+network namespaces (no network), the runtime read-only, private tmp/run/shm/home,
+the project read/write at `/project`, UID 1000. It builds the pointer helper on
+first use. Mango and mmsg are in the runtime's `/usr/local/bin`.
+
 ## Prepared cloud rootfs / Docker VFS fallback
 
 This workspace has `/workspace/arch-runtime` ready for:
