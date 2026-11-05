@@ -62,11 +62,11 @@ Scope {
         onConnectedChanged: if (connected) root.reconcile()
     }
     Timer { interval: 2000; running: true; repeat: true; onTriggered: if (!health.connected && health.path) health.connected = true }
-    Timer { interval: 10000; running: true; repeat: true; onTriggered: root.reconcile() }
     // The first refresh on connect can land before Hyprland has reported monitors, and the
     // focused monitor/active workspace are otherwise only filled by the next event (an idle
     // desktop may send none). Ask every 250 ms until both are known, for at most 10 s;
-    // the 10 s reconcile and events take over after that, so this never becomes polling.
+    // events take over after that, so this never becomes polling. Reconciliation otherwise
+    // happens only when the event socket (re)connects.
     property int settleTries: 0
     Timer {
         interval: 250; repeat: true
