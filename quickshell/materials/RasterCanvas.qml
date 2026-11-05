@@ -1,5 +1,6 @@
 import QtQuick
 import QtQuick.Window
+import Quickshell
 import "../config"
 // A Canvas whose backing image is in device pixels, so dither cells land on the output's
 // pixel grid at any scale. Painted on demand and then a static texture: nothing redraws
@@ -13,6 +14,8 @@ Item {
     readonly property int deviceWidth: Math.max(1, Math.round(width * dpr))
     readonly property int deviceHeight: Math.max(1, Math.round(height * dpr))
     property int coalesce: 0
+    // ILLUMINATED_PROFILE=1 logs each paint's duration: "paint <kind> <w>x<h> <ms>".
+    property string kind: objectName || (parent ? String(parent).split("_QML")[0].split("(")[0] : "?")
     // Handlers: onPainting: function(ctx, w, h) { … } — w, h in device px.
     signal painting(var ctx, int w, int h)
     // Images for drawImage (skin art). One rule for every user: images(urls) is "ready",
@@ -45,11 +48,16 @@ Item {
         onImageLoaded: root.repaint()
         onPaint: {
             if (root.width <= 0 || root.height <= 0) return;
+            const t0 = Profile.enabled ? Date.now() : 0;
             const ctx = getContext("2d");
             MaterialFields.ensure(root, ctx);     // the skin's material images, once per skin
+            const t1 = Profile.enabled ? Date.now() : 0;
             root.painting(ctx, width, height);
+            if (Profile.enabled) Profile.paint(root.kind, width, height, t1 - t0, Date.now() - t1);
         }
     }
+    Component.onCompleted: if (Profile.enabled) Profile.alive++
+    Component.onDestruction: if (Profile.enabled) Profile.alive--
     Connections { target: MaterialFields; function onVersionChanged() { canvas.requestPaint(); } }
     Timer { id: throttle; interval: root.coalesce; onTriggered: canvas.requestPaint() }
 }
