@@ -1,0 +1,654 @@
+diff --git a/dev/README.md b/dev/README.md
+index 7622a0a..2a0001f 100644
+--- a/dev/README.md
++++ b/dev/README.md
+@@ -27,8 +27,8 @@ It builds unmodified Mango/mmsg 0.18.4 with Xwayland disabled and copies develop
+ binaries into ignored `dev/`. The build directory is disposable. Do not install those
+ binaries over a working compositor. Pointer helper sources/protocol are included.
+ 
+-`test-all.sh` runs syntax/unit/strict-lint validation, then nine fresh private
+-D-Bus + headless Sway sessions: foundation, artifacts, isolated feature smoke,
++`test-all.sh` runs syntax/unit/strict-lint validation, then ten fresh private
++D-Bus + headless Sway sessions: foundation, artifacts, shared text-face geometry, isolated feature smoke,
+ audio, live reload/configuration, Mango adapter protocol, greeter protocol, v3
+ configuration (`single-config`) and the Session deck (`session-ui`).
+ Runtime failures stop the runner, record a nonzero suite exit and leave subsequent
+diff --git a/dev/test-all.sh b/dev/test-all.sh
+index 5349f46..e9a092b 100755
+--- a/dev/test-all.sh
++++ b/dev/test-all.sh
+@@ -3,7 +3,7 @@
+ set -euo pipefail
+ cd /project
+ mkdir -p artifacts/development artifacts/portable artifacts/v3
+-for suite in foundation artifacts smoke audio reload compositor greeter single-config session-ui; do
++for suite in foundation artifacts text-face smoke audio reload compositor greeter single-config session-ui; do
+  printf 'NOT RUN\n' > "artifacts/development/$suite.exit"
+ done
+ set +e
+@@ -12,10 +12,11 @@ bash scripts/validate.sh > artifacts/development/lint.txt 2>&1
+ lint_status=$?
+ set -e
+ printf '%s\n' "$lint_status" > artifacts/development/lint.exit
+-for suite in foundation artifacts smoke audio reload compositor greeter single-config session-ui; do
++for suite in foundation artifacts text-face smoke audio reload compositor greeter single-config session-ui; do
+  case "$suite" in
+   foundation) command=(python tests/runtime/run.py) ;;
+   artifacts) command=(python tests/runtime/artifacts.py) ;;
++  text-face) command=(python tests/runtime/text-face.py) ;;
+   compositor) command=(python tests/runtime/compositor.py) ;;
+   greeter) command=(python tests/runtime/greeter-protocol.py) ;;
+   reload) command=(python tests/runtime/reload.py) ;;
+diff --git a/quickshell/artifacts/ArtifactCard.qml b/quickshell/artifacts/ArtifactCard.qml
+index a31827d..a27bb24 100644
+--- a/quickshell/artifacts/ArtifactCard.qml
++++ b/quickshell/artifacts/ArtifactCard.qml
+@@ -7,6 +7,9 @@ FocusScope {
+     id: root
+     property real aspectRatio: 5 / 7
+     readonly property bool horizontal: aspectRatio > 1
++    readonly property var frontItem: frontLoader.item
++    readonly property var backItem: backLoader.item
++    function textFace(ink, wash, item) { return {ink: ink, wash: wash, width: root.width, height: root.height, family: Theme.cardFamily, item: item}; }
+     property Component front
+     property real frontInset: Theme.inset
+     property Component back
+@@ -73,7 +76,7 @@ FocusScope {
+             Loader { anchors.fill: parent; active: root.selected; sourceComponent: FocusHalo { radius: 0.055 * Math.min(root.width, root.height) } }
+             // Service cards paint their own cardstock (with rounded corners and the dog-ear cut).
+             Paper { anchors.fill: parent; visible: root.decorated; decorated: root.decorated }
+-            Loader { anchors.fill: parent; anchors.margins: root.frontInset; sourceComponent: root.front; visible: root.frontFacing }
++            Loader { id: frontLoader; anchors.fill: parent; anchors.margins: root.frontInset; sourceComponent: root.front; visible: root.frontFacing }
+             Loader {
+                 id: backLoader
+                 anchors.fill: parent; anchors.margins: root.backInset; sourceComponent: root.back
+diff --git a/quickshell/artifacts/CardAction.qml b/quickshell/artifacts/CardAction.qml
+index b2aa557..ed45d00 100644
+--- a/quickshell/artifacts/CardAction.qml
++++ b/quickshell/artifacts/CardAction.qml
+@@ -4,13 +4,7 @@ import QtQuick
+ Item {
+     id: root
+     property string text
+-    property color ink
+-    property var wash: null
+-    property real faceWidth
+-    property real faceHeight
+-    property real originX: 0
+-    property real originY: 0
+-    property string family
++    property var face: ({})
+     property real pixelSize: 18
+     property int horizontalAlignment: Text.AlignLeft
+     property bool tabStop: true
+@@ -27,17 +21,15 @@ Item {
+     SplitText {
+         id: label
+         anchors.fill: parent
+-        text: root.text; ink: root.ink; wash: root.wash
+-        faceWidth: root.faceWidth; faceHeight: root.faceHeight
+-        originX: root.originX; originY: root.originY
+-        family: root.family; pixelSize: root.pixelSize; horizontalAlignment: root.horizontalAlignment
++        text: root.text; face: root.face
++        pixelSize: root.pixelSize; horizontalAlignment: root.horizontalAlignment
+     }
+     Rectangle {   // keyboard focus: a hairline under the words, in the text's own ink
+         visible: root.activeFocus
+         y: parent.height - 2; height: 1.5
+         width: Math.min(parent.width, label.implicitWidth)
+         x: root.horizontalAlignment === Text.AlignHCenter ? (parent.width - width) / 2 : root.horizontalAlignment === Text.AlignRight ? parent.width - width : 0
+-        color: root.ink
++        color: label.ink
+     }
+     MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: root.triggered() }
+ }
+diff --git a/quickshell/artifacts/ServiceCard.qml b/quickshell/artifacts/ServiceCard.qml
+index 7dae979..f7af763 100644
+--- a/quickshell/artifacts/ServiceCard.qml
++++ b/quickshell/artifacts/ServiceCard.qml
+@@ -27,6 +27,9 @@ ArtifactCard {
+     frontInset: 0
+     backInset: 0
+     decorated: false
++    readonly property var backTextFace: root.textFace(backSurface.ink, backTextWash, backItem)
++    readonly property var frontTextFace: root.textFace(surface.chinInk, surface.chinFill ? null : surface.wash, frontItem)
++    readonly property var plainBackTextFace: root.textFace(backSurface.ink, null, backItem)
+     readonly property var geo: CardModel.layout(width, height)
+     readonly property real k: geo.k
+     readonly property var colours: Theme.cardColours
+@@ -140,7 +143,6 @@ ArtifactCard {
+                 readonly property bool useShort: root.shortTitle !== "" && titleMetrics.advanceWidth + valueMetrics.advanceWidth > width - gap
+                 readonly property string label: root.presentation.numeral ? "" : useShort ? root.shortTitle : root.title
+                 readonly property string value: (root.presentation.glyph ? root.presentation.glyph + (root.presentation.value ? " " : "") : "") + root.presentation.value
+-                readonly property var textWash: root.surface.chinFill ? null : root.surface.wash
+                 readonly property real base: 17 * root.k
+                 readonly property real gap: 6 * root.k
+                 TextMetrics { id: titleMetrics; font.family: Theme.cardFamily; font.bold: Theme.cardBold; font.pixelSize: chin.base; text: root.title }
+@@ -148,24 +150,22 @@ ArtifactCard {
+                 TextMetrics { id: valueMetrics; font.family: Theme.cardFamily; font.bold: Theme.cardBold; font.pixelSize: chin.base; text: chin.value }
+                 readonly property real size: chin.base * Math.max(0.7, Math.min(1, (width - gap) / Math.max(1, labelMetrics.advanceWidth + valueMetrics.advanceWidth)))
+                 SplitText {
++                    face: root.frontTextFace
+                     id: labelText
+                     height: parent.height
+                     width: Math.min(implicitWidth, chin.value ? parent.width * 0.62 : parent.width)
+                     text: chin.label
+-                    ink: root.surface.chinInk; wash: chin.textWash
+-                    faceWidth: root.width; faceHeight: root.height
+-                    originX: chin.x + x; originY: chin.y + y
+-                    family: Theme.cardFamily; pixelSize: chin.size
++
++                    pixelSize: chin.size
+                 }
+                 SplitText {
++                    face: root.frontTextFace
+                     x: labelText.width + (chin.label ? chin.gap : 0)
+                     height: parent.height; width: parent.width - x
+                     horizontalAlignment: Text.AlignRight
+                     text: chin.value
+-                    ink: root.surface.chinInk; wash: chin.textWash
+-                    faceWidth: root.width; faceHeight: root.height
+-                    originX: chin.x + x; originY: chin.y + y
+-                    family: Theme.cardFamily; pixelSize: chin.size
++
++                    pixelSize: chin.size
+                 }
+             }
+         }
+@@ -195,23 +195,24 @@ ArtifactCard {
+             // a quarter column is too narrow for the word, so Mixer is a footer line.
+             readonly property bool wide: root.aspectRatio > 1
+             readonly property real listWidth: wide ? ob.width * 0.75 - root.pad : ob.width - 2 * root.pad
+-            CardAction {   // first in focus order: the way out to the full mixer
++            CardAction {
++                face: root.backTextFace
++               // first in focus order: the way out to the full mixer
+                 id: mixer
+                 x: ob.wide ? ob.width * 0.75 : root.pad
+                 width: ob.wide ? ob.width * 0.25 - root.geo.frame : ob.width - 2 * root.pad
+                 height: implicitHeight
+                 y: ob.wide ? (ob.height - height) / 2 : ob.height - root.pad - height
+                 text: "Mixer"; horizontalAlignment: ob.wide ? Text.AlignHCenter : Text.AlignLeft
+-                ink: root.backSurface.ink; wash: root.backTextWash; faceWidth: root.width; faceHeight: root.height
+-                originX: x; originY: y; family: Theme.cardFamily; pixelSize: 16 * root.k
++                   pixelSize: 16 * root.k
+                 onTriggered: Navigation.expand(root.spec.sheet || "audio")
+             }
+             SplitText {
++                face: root.backTextFace
+                 id: obHeader
+                 x: root.pad; y: root.pad; width: ob.listWidth; height: 30 * root.k
+-                text: "Output"; ink: root.backSurface.ink; wash: root.backTextWash
+-                faceWidth: root.width; faceHeight: root.height; originX: x; originY: y
+-                family: Theme.cardFamily; pixelSize: 24 * root.k
++                text: "Output";
++                pixelSize: 24 * root.k
+             }
+             Column {
+                 id: obList
+@@ -221,14 +222,14 @@ ArtifactCard {
+                 Repeater {
+                     model: AudioState.outputs.slice(0, Math.max(0, Math.floor(((ob.wide ? ob.height - root.pad : mixer.y) - obList.y) / (24 * root.k))))
+                     CardAction {
++                        face: root.backTextFace
+                         id: outputRow
+                         required property var modelData
+                         readonly property real level: AudioState.levelOf(modelData)
+                         width: obList.width; height: 22 * root.k
+                         opacity: modelData === AudioState.sink ? 1 : 0.72
+                         text: (level >= 0 ? Math.round(level * 100) + "% " : "") + (modelData.description || modelData.nickname || modelData.name)
+-                        ink: root.backSurface.ink; wash: root.backTextWash; faceWidth: root.width; faceHeight: root.height
+-                        originX: obList.x + x; originY: obList.y + y; family: Theme.cardFamily; pixelSize: 18 * root.k
++                           pixelSize: 18 * root.k
+                         onTriggered: AudioState.selectOutput(outputRow.modelData)
+                     }
+                 }
+@@ -241,18 +242,19 @@ ArtifactCard {
+         Item {
+             id: nb
+             SplitText {
++                face: root.plainBackTextFace
+                 id: nbHeader
+                 x: root.pad; y: root.pad; width: nb.width - 2 * root.pad; height: 30 * root.k
+                 text: NetworkState.failed ? root.headerTitle + " · Failed" : root.headerTitle
+-                ink: root.backSurface.ink; faceWidth: root.width; faceHeight: root.height; originX: x; originY: y
+-                family: Theme.cardFamily; pixelSize: 24 * root.k
++                pixelSize: 24 * root.k
+             }
+-            CardAction {   // first in focus order
++            CardAction {
++                face: root.plainBackTextFace
++               // first in focus order
+                 id: seeAll
+                 x: root.pad; y: nb.height - root.pad - height; width: nb.width - 2 * root.pad; height: 24 * root.k
+                 text: "See All ›"
+-                ink: root.backSurface.ink; faceWidth: root.width; faceHeight: root.height; originX: x; originY: y
+-                family: Theme.cardFamily; pixelSize: 18 * root.k
++                pixelSize: 18 * root.k
+                 onTriggered: Navigation.expand(root.spec.sheet || "network")
+             }
+             Column {
+@@ -264,13 +266,13 @@ ArtifactCard {
+                     // The connected network, then the strongest others, as many as fit (at most 5).
+                     model: NetworkState.networks.slice(0, Math.max(0, Math.min(5, Math.floor((seeAll.y - nbList.y) / (22 * root.k)))))
+                     CardAction {
++                        face: root.plainBackTextFace
+                         id: networkRow
+                         required property var modelData
+                         tabStop: false
+                         width: nbList.width; height: 20 * root.k
+                         text: (modelData.connected ? "✓ " : "") + modelData.name
+-                        ink: root.backSurface.ink; faceWidth: root.width; faceHeight: root.height
+-                        originX: nbList.x + x; originY: nbList.y + y; family: Theme.cardFamily; pixelSize: 17 * root.k
++                           pixelSize: 17 * root.k
+                         onTriggered: if (!networkRow.modelData.connected) NetworkState.connectNetwork(networkRow.modelData, "")
+                     }
+                 }
+@@ -283,18 +285,18 @@ ArtifactCard {
+         Item {
+             id: bb
+             SplitText {
++                face: root.plainBackTextFace
+                 id: bbHeader
+                 x: root.pad; y: root.pad; width: bb.width - 2 * root.pad; height: 30 * root.k
+                 text: BluetoothState.failed ? root.headerTitle + " · Failed" : root.headerTitle
+-                ink: root.backSurface.ink; faceWidth: root.width; faceHeight: root.height; originX: x; originY: y
+-                family: Theme.cardFamily; pixelSize: 24 * root.k
++                pixelSize: 24 * root.k
+             }
+             CardAction {
++                face: root.plainBackTextFace
+                 id: devices
+                 x: root.pad; y: bb.height - root.pad - height; width: bb.width - 2 * root.pad; height: 24 * root.k
+                 text: "Devices ›"
+-                ink: root.backSurface.ink; faceWidth: root.width; faceHeight: root.height; originX: x; originY: y
+-                family: Theme.cardFamily; pixelSize: 18 * root.k
++                pixelSize: 18 * root.k
+                 onTriggered: Navigation.expand(root.spec.sheet || "bluetooth")
+             }
+             Column {
+@@ -315,11 +317,11 @@ ArtifactCard {
+                             font.pixelSize: 11 * root.k; color: root.backSurface.ink
+                         }
+                         SplitText {
++                            face: root.plainBackTextFace
+                             anchors.fill: parent
+                             text: deviceRow.modelData.name
+-                            ink: root.backSurface.ink; faceWidth: root.width; faceHeight: root.height
+-                            originX: bbList.x + deviceRow.x; originY: bbList.y + deviceRow.y
+-                            family: Theme.cardFamily; pixelSize: 17 * root.k
++
++                            pixelSize: 17 * root.k
+                         }
+                     }
+                 }
+@@ -333,11 +335,11 @@ ArtifactCard {
+             id: cb
+             readonly property bool held: root.externalPower && !root.batteryFull
+             SplitText {
++                face: root.backTextFace
+                 id: cbHeader
+                 x: root.pad; y: root.pad; width: cb.width - 2 * root.pad; height: 30 * root.k
+-                text: root.headerTitle; ink: root.backSurface.ink; wash: root.backTextWash
+-                faceWidth: root.width; faceHeight: root.height; originX: x; originY: y
+-                family: Theme.cardFamily; pixelSize: 24 * root.k
++                text: root.headerTitle;
++                pixelSize: 24 * root.k
+             }
+             Column {
+                 id: stats
+@@ -356,18 +358,18 @@ ArtifactCard {
+                         required property var modelData
+                         width: stats.width
+                         SplitText {
++                            face: root.backTextFace
+                             width: stat.width; height: 17 * root.k
+                             text: stat.modelData.label; bold: false
+-                            ink: root.backSurface.ink; wash: root.backTextWash; faceWidth: root.width; faceHeight: root.height
+-                            originX: stats.x + stat.x + x; originY: stats.y + stat.y + y
+-                            family: Theme.cardFamily; pixelSize: 15 * root.k
++
++                            pixelSize: 15 * root.k
+                         }
+                         SplitText {
++                            face: root.backTextFace
+                             width: stat.width; height: 25 * root.k
+                             text: stat.modelData.value
+-                            ink: root.backSurface.ink; wash: root.backTextWash; faceWidth: root.width; faceHeight: root.height
+-                            originX: stats.x + stat.x + x; originY: stats.y + stat.y + y
+-                            family: Theme.cardFamily; pixelSize: 22 * root.k
++
++                            pixelSize: 22 * root.k
+                         }
+                     }
+                 }
+@@ -385,13 +387,13 @@ ArtifactCard {
+             Repeater {
+                 model: root.entries
+                 CardAction {
++                    face: root.plainBackTextFace
+                     id: entry
+                     required property string modelData
+                     width: menu.width; height: 30 * root.k
+                     text: root.entryText(modelData)
+                     horizontalAlignment: Text.AlignHCenter
+-                    ink: root.backSurface.ink; faceWidth: root.width; faceHeight: root.height
+-                    originX: menu.x + x; originY: menu.y + y; family: Theme.cardFamily; pixelSize: 22 * root.k
++                       pixelSize: 22 * root.k
+                     enabled: !SessionState.busy
+                     onTriggered: root.choose(entry.modelData)
+                 }
+@@ -426,16 +428,16 @@ ArtifactCard {
+                 spacing: 4 * root.k
+                 visible: !ask.failed
+                 SplitText {
++                    face: root.backTextFace
+                     width: prompt.width; height: 32 * root.k
+                     text: "Confirm?"; horizontalAlignment: Text.AlignHCenter
+-                    ink: root.backSurface.ink; wash: root.backTextWash; faceWidth: root.width; faceHeight: root.height
+-                    originX: prompt.x + x; originY: prompt.y + y; family: Theme.cardFamily; pixelSize: 24 * root.k
++                       pixelSize: 24 * root.k
+                 }
+                 SplitText {
++                    face: root.backTextFace
+                     width: prompt.width; height: 24 * root.k
+                     text: CardModel.sentence(root.title); horizontalAlignment: Text.AlignHCenter
+-                    ink: root.backSurface.ink; wash: root.backTextWash; faceWidth: root.width; faceHeight: root.height
+-                    originX: prompt.x + x; originY: prompt.y + y; family: Theme.cardFamily; pixelSize: 18 * root.k
++                       pixelSize: 18 * root.k
+                 }
+             }
+             Text {   // a refused command (for example Sleep without a returning locker)
+@@ -455,24 +457,24 @@ ArtifactCard {
+         Item {
+             id: gb
+             SplitText {
++                face: root.backTextFace
+                 id: gbHeader
+                 x: root.pad; y: root.pad; width: gb.width - 2 * root.pad; height: 30 * root.k
+-                text: root.headerTitle; ink: root.backSurface.ink; wash: root.backTextWash
+-                faceWidth: root.width; faceHeight: root.height; originX: x; originY: y
+-                family: Theme.cardFamily; pixelSize: 24 * root.k
++                text: root.headerTitle;
++                pixelSize: 24 * root.k
+             }
+             SplitText {
++                face: root.backTextFace
+                 x: root.pad; y: gbHeader.y + gbHeader.height; width: gb.width - 2 * root.pad; height: 24 * root.k
+-                text: root.presentation.value; ink: root.backSurface.ink; wash: root.backTextWash
+-                faceWidth: root.width; faceHeight: root.height; originX: x; originY: y
+-                family: Theme.cardFamily; pixelSize: 18 * root.k
++                text: root.presentation.value;
++                pixelSize: 18 * root.k
+             }
+             CardAction {
++                face: root.backTextFace
+                 visible: root.spec.sheet !== ""
+                 x: root.pad; y: gb.height - root.pad - height; width: gb.width - 2 * root.pad; height: 24 * root.k
+                 text: "Open ›"
+-                ink: root.backSurface.ink; wash: root.backTextWash; faceWidth: root.width; faceHeight: root.height
+-                originX: x; originY: y; family: Theme.cardFamily; pixelSize: 18 * root.k
++                   pixelSize: 18 * root.k
+                 onTriggered: Navigation.expand(root.spec.sheet)
+             }
+         }
+diff --git a/quickshell/artifacts/SplitText.qml b/quickshell/artifacts/SplitText.qml
+index 9f93158..fac576b 100644
+--- a/quickshell/artifacts/SplitText.qml
++++ b/quickshell/artifacts/SplitText.qml
+@@ -3,17 +3,33 @@ import "CardModel.js" as CardModel
+ import "../theme"
+ // Live text inked by what lies beneath it: over the wash it takes the wash's
+ // ink, elsewhere `ink`. Two clipped copies meet exactly at the wash boundary.
+-// originX/originY: this item's position in face coordinates.
++// The shared face supplies ink, wash, geometry, family and the coordinate item.
+ Item {
+     id: root
+     property string text
+-    property color ink
+-    property var wash: null
+-    property real faceWidth
+-    property real faceHeight
+-    property real originX: 0
+-    property real originY: 0
+-    property string family
++    property var face: ({})
++    readonly property color ink: face.ink || Theme.ink
++    readonly property var wash: face.wash || null
++    readonly property real faceWidth: face.width || 0
++    readonly property real faceHeight: face.height || 0
++    readonly property string family: face.family || Theme.cardFamily
++    property point origin: Qt.point(0, 0)
++    function mapOrigin() { origin = face.item && parent ? mapToItem(face.item, 0, 0) : Qt.point(0, 0); }
++    onFaceChanged: Qt.callLater(mapOrigin)
++    onXChanged: Qt.callLater(mapOrigin)
++    onYChanged: Qt.callLater(mapOrigin)
++    onWidthChanged: Qt.callLater(mapOrigin)
++    onHeightChanged: Qt.callLater(mapOrigin)
++    onParentChanged: Qt.callLater(mapOrigin)
++    onTextChanged: Qt.callLater(mapOrigin)
++    Component.onCompleted: mapOrigin()
++    Connections {
++        target: root.parent
++        function onXChanged() { Qt.callLater(root.mapOrigin); }
++        function onYChanged() { Qt.callLater(root.mapOrigin); }
++        function onWidthChanged() { Qt.callLater(root.mapOrigin); }
++        function onHeightChanged() { Qt.callLater(root.mapOrigin); }
++    }
+     property real pixelSize: 16
+     property bool bold: Theme.cardBold     // blackletter faces have a single weight
+     property int horizontalAlignment: Text.AlignLeft
+@@ -22,10 +38,10 @@ Item {
+     readonly property var area: CardModel.washRect(wash, faceWidth, faceHeight)
+     // Wash region in local coordinates. Washes start at the left or bottom edge,
+     // so the remaining region is always a single rectangle.
+-    readonly property real washLeft: Math.max(0, area.x - originX)
+-    readonly property real washRight: Math.min(width, area.x + area.width - originX)
+-    readonly property real washTop: Math.max(0, area.y - originY)
+-    readonly property real washBottom: Math.min(height, area.y + area.height - originY)
++    readonly property real washLeft: Math.max(0, area.x - origin.x)
++    readonly property real washRight: Math.min(width, area.x + area.width - origin.x)
++    readonly property real washTop: Math.max(0, area.y - origin.y)
++    readonly property real washBottom: Math.min(height, area.y + area.height - origin.y)
+     readonly property bool vertical: !!wash && wash.axis === "y"
+     Text {
+         id: probe
+diff --git a/quickshell/media/DeviceCard.qml b/quickshell/media/DeviceCard.qml
+index 6a072b2..c91d089 100644
+--- a/quickshell/media/DeviceCard.qml
++++ b/quickshell/media/DeviceCard.qml
+@@ -17,6 +17,9 @@ ArtifactCard {
+     required property var device
+     aspectRatio: 5 / 7
+     frontInset: 0; backInset: 0; decorated: false
++    readonly property var backTextFace: root.textFace(surface.ink, textWash, backItem)
++    readonly property var frontTextFace: root.textFace(surface.ink, textWash, frontItem)
++    readonly property var plainFrontTextFace: root.textFace(surface.ink, null, frontItem)
+     readonly property var geo: CardModel.layout(width, height)
+     readonly property real k: geo.k
+     readonly property var use: RemovableMedia.usage[device.id] || null
+@@ -55,12 +58,12 @@ ArtifactCard {
+                 Repeater {
+                     model: root.actions
+                     CardAction {
++                        face: root.frontTextFace
+                         id: action
+                         required property string modelData
+                         width: list.width; height: 26 * root.k
+                         text: modelData; horizontalAlignment: Text.AlignHCenter
+-                        ink: root.surface.ink; wash: root.textWash; faceWidth: root.width; faceHeight: root.height
+-                        originX: list.x + x; originY: list.y + y; family: Theme.cardFamily; pixelSize: 22 * root.k
++                           pixelSize: 22 * root.k
+                         enabled: !RemovableMedia.busy[root.device.id]
+                         onTriggered: root.act(action.modelData)
+                     }
+@@ -71,7 +74,9 @@ ArtifactCard {
+                 anchors.centerIn: parent
+                 width: parent.width - 2 * root.pad
+                 spacing: 8 * root.k
+-                SplitText { width: parent.width; height: 26 * root.k; text: "Sealed"; horizontalAlignment: Text.AlignHCenter; ink: root.surface.ink; faceWidth: root.width; faceHeight: root.height; family: Theme.cardFamily; pixelSize: 22 * root.k }
++                SplitText {
++                    face: root.plainFrontTextFace
++                 width: parent.width; height: 26 * root.k; text: "Sealed"; horizontalAlignment: Text.AlignHCenter;     pixelSize: 22 * root.k }
+                 SearchField {
+                     id: passphrase
+                     width: parent.width
+@@ -81,9 +86,10 @@ ArtifactCard {
+                     onAccepted: { RemovableMedia.unlock(root.device.id, text); text = ""; }
+                 }
+                 CardAction {
++                    face: root.plainFrontTextFace
+                     width: parent.width; height: 24 * root.k
+                     text: RemovableMedia.busy[root.device.id] === "unlock" ? "Breaking the seal…" : "Unlock"; horizontalAlignment: Text.AlignHCenter
+-                    ink: root.surface.ink; faceWidth: root.width; faceHeight: root.height; family: Theme.cardFamily; pixelSize: 18 * root.k
++                        pixelSize: 18 * root.k
+                     onTriggered: { RemovableMedia.unlock(root.device.id, passphrase.text); passphrase.text = ""; }
+                 }
+             }
+@@ -91,8 +97,12 @@ ArtifactCard {
+                 x: root.geo.chinArea.x + 5 * root.k; y: root.geo.chinArea.y
+                 width: root.geo.chinArea.width - 10 * root.k; height: root.geo.chinArea.height
+                 readonly property string value: RemovableMedia.errors[root.device.id] ? "Failed" : RemovableMedia.busy[root.device.id] ? RemovableMedia.busy[root.device.id] + "…" : CardModel.capacity(root.use ? root.use.used : -1, root.use ? root.use.size : root.device.size)
+-                SplitText { id: chinLabel; width: Math.min(implicitWidth, parent.width * 0.55); height: parent.height; text: root.device.label; ink: root.surface.ink; wash: root.textWash; faceWidth: root.width; faceHeight: root.height; originX: parent.x; originY: parent.y; family: Theme.cardFamily; pixelSize: 17 * root.k }
+-                SplitText { x: chinLabel.width + 6 * root.k; width: parent.width - x; height: parent.height; horizontalAlignment: Text.AlignRight; text: parent.value; ink: root.surface.ink; wash: root.textWash; faceWidth: root.width; faceHeight: root.height; originX: parent.x + x; originY: parent.y; family: Theme.cardFamily; pixelSize: 17 * root.k }
++                SplitText {
++                    face: root.frontTextFace
++                 id: chinLabel; width: Math.min(implicitWidth, parent.width * 0.55); height: parent.height; text: root.device.label;        pixelSize: 17 * root.k }
++                SplitText {
++                    face: root.frontTextFace
++                 x: chinLabel.width + 6 * root.k; width: parent.width - x; height: parent.height; horizontalAlignment: Text.AlignRight; text: parent.value;        pixelSize: 17 * root.k }
+             }
+         }
+     }
+@@ -100,7 +110,9 @@ ArtifactCard {
+         Item {
+             id: rear
+             MaterialFace { anchors.fill: parent; surface: root.surface; front: false }
+-            SplitText { x: root.pad; y: root.pad; width: rear.width - 2 * root.pad; height: 30 * root.k; text: root.device.label; ink: root.surface.ink; wash: root.textWash; faceWidth: root.width; faceHeight: root.height; originX: x; originY: y; family: Theme.cardFamily; pixelSize: 24 * root.k }
++            SplitText {
++                face: root.backTextFace
++             x: root.pad; y: root.pad; width: rear.width - 2 * root.pad; height: 30 * root.k; text: root.device.label;        pixelSize: 24 * root.k }
+             Item {   // Confirm? (Shut Down template)
+                 anchors.fill: parent
+                 visible: root.backMode === "confirm"
+@@ -111,8 +123,12 @@ ArtifactCard {
+                 MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: root.confirmFromBack() }
+                 Column {
+                     anchors.centerIn: parent; width: parent.width - 2 * root.pad; spacing: 4 * root.k
+-                    SplitText { width: parent.width; height: 32 * root.k; text: "Confirm?"; horizontalAlignment: Text.AlignHCenter; ink: root.surface.ink; wash: root.textWash; faceWidth: root.width; faceHeight: root.height; originX: root.pad; originY: rear.height / 2 - 16 * root.k; family: Theme.cardFamily; pixelSize: 24 * root.k }
+-                    SplitText { width: parent.width; height: 24 * root.k; text: root.pendingAction; horizontalAlignment: Text.AlignHCenter; ink: root.surface.ink; wash: root.textWash; faceWidth: root.width; faceHeight: root.height; originX: root.pad; originY: rear.height / 2 + 16 * root.k; family: Theme.cardFamily; pixelSize: 18 * root.k }
++                    SplitText {
++                        face: root.backTextFace
++                     width: parent.width; height: 32 * root.k; text: "Confirm?"; horizontalAlignment: Text.AlignHCenter;        pixelSize: 24 * root.k }
++                    SplitText {
++                        face: root.backTextFace
++                     width: parent.width; height: 24 * root.k; text: root.pendingAction; horizontalAlignment: Text.AlignHCenter;        pixelSize: 18 * root.k }
+                 }
+             }
+             Column {   // Rename
+@@ -125,7 +141,9 @@ ArtifactCard {
+                     onVisibleChanged: if (visible) { forceActiveFocus(); selectAll(); }
+                     onAccepted: { RemovableMedia.rename(root.device.id, text.trim()); root.flipped = false; }
+                 }
+-                CardAction { width: parent.width; height: 24 * root.k; text: "Rename"; horizontalAlignment: Text.AlignHCenter; ink: root.surface.ink; wash: root.textWash; faceWidth: root.width; faceHeight: root.height; originX: root.pad; originY: rear.height / 2; family: Theme.cardFamily; pixelSize: 18 * root.k
++                CardAction {
++                    face: root.backTextFace
++                 width: parent.width; height: 24 * root.k; text: "Rename"; horizontalAlignment: Text.AlignHCenter;        pixelSize: 18 * root.k
+                     onTriggered: { RemovableMedia.rename(root.device.id, label.text.trim()); root.flipped = false; } }
+             }
+             Column {   // Properties
+@@ -139,8 +157,12 @@ ArtifactCard {
+                         id: prop
+                         required property var modelData
+                         width: parent.width
+-                        SplitText { width: prop.width; height: 15 * root.k; text: prop.modelData[0]; ink: root.surface.ink; wash: root.textWash; faceWidth: root.width; faceHeight: root.height; originX: root.pad; originY: prop.y; family: Theme.cardFamily; pixelSize: 13 * root.k }
+-                        SplitText { width: prop.width; height: 19 * root.k; text: prop.modelData[1]; ink: root.surface.ink; wash: root.textWash; faceWidth: root.width; faceHeight: root.height; originX: root.pad; originY: prop.y; family: Theme.cardFamily; pixelSize: 16 * root.k }
++                        SplitText {
++                            face: root.backTextFace
++                         width: prop.width; height: 15 * root.k; text: prop.modelData[0];        pixelSize: 13 * root.k }
++                        SplitText {
++                            face: root.backTextFace
++                         width: prop.width; height: 19 * root.k; text: prop.modelData[1];        pixelSize: 16 * root.k }
+                     }
+                 }
+             }
+diff --git a/tests/runtime/text-face.py b/tests/runtime/text-face.py
+new file mode 100644
+index 0000000..cea23f0
+--- /dev/null
++++ b/tests/runtime/text-face.py
+@@ -0,0 +1,40 @@
++"""Shared face coordinates and wash clipping under real QML layout changes."""
++import json, pathlib, shutil, subprocess as sp, tempfile, time
++ROOT = pathlib.Path('/project')
++OUT = ROOT / 'artifacts/development'
++with tempfile.TemporaryDirectory() as directory:
++    cfg = pathlib.Path(directory) / 'qml'
++    shutil.copytree(ROOT / 'quickshell', cfg)
++    shutil.copy(ROOT / 'tests/runtime/text-face.qml', cfg / 'text-face.qml')
++    path = str(cfg / 'text-face.qml')
++    with (OUT / 'text-face.log').open('w') as output:
++        process = sp.Popen(['quickshell', '-p', path], stdout=output, stderr=sp.STDOUT)
++        try:
++            def ipc(method):
++                r = sp.run(['quickshell', 'ipc', '-p', path, 'call', 'textFaceTest', method], capture_output=True, text=True, timeout=5)
++                assert r.returncode == 0, r.stderr
++                return r.stdout
++            def wait(expected):
++                end = time.monotonic() + 8
++                state = None
++                while time.monotonic() < end:
++                    if process.poll() is not None:
++                        raise AssertionError((OUT / 'text-face.log').read_text())
++                    try:
++                        state = json.loads(ipc('state'))
++                        if all(abs(state[k] - value) < .001 for k, value in expected.items()):
++                            return
++                    except (AssertionError, json.JSONDecodeError):
++                        pass
++                    time.sleep(.05)
++                raise AssertionError((expected, state))
++            wait({'x': 67, 'y': 49, 'right': 33})
++            ipc('move'); wait({'x': 80, 'right': 20})
++            ipc('resize'); wait({'x': 80, 'right': 40})
++            ipc('vertical'); wait({'top': 26, 'bottom': 20})
++            ipc('lower'); wait({'y': 84, 'top': 0, 'bottom': 20})
++            problems = [line for line in (OUT / 'text-face.log').read_text().splitlines() if any(word in line for word in ('TypeError', 'ReferenceError', 'Cannot assign', 'Binding loop'))]
++            assert not problems, '\n'.join(problems)
++            print('PASS: shared face maps nested translation, resize and vertical wash clipping under real QML', flush=True)
++        finally:
++            process.terminate(); process.wait(timeout=5)
+diff --git a/tests/runtime/text-face.qml b/tests/runtime/text-face.qml
+new file mode 100644
+index 0000000..f6755b9
+--- /dev/null
++++ b/tests/runtime/text-face.qml
+@@ -0,0 +1,28 @@
++import QtQuick
++import Quickshell
++import Quickshell.Io
++import "artifacts"
++ShellRoot {
++    PanelWindow {
++        implicitWidth: 300; implicitHeight: 250
++        Item {
++            id: surface
++            x: 20; y: 30; width: 200; height: 150
++            property bool vertical: false
++            readonly property var description: ({item: surface, width: width, height: height, ink: "#111111", family: "sans-serif", wash: {axis: vertical ? "y" : "x", level: 0.5, ink: "#ffffff"}})
++            Item {
++                id: nested
++                x: 60; y: 40
++                SplitText { id: label; x: 7; y: 9; width: 40; height: 20; face: surface.description; text: "Wash" }
++            }
++        }
++    }
++    IpcHandler {
++        target: "textFaceTest"
++        function state(): string { return JSON.stringify({x: label.origin.x, y: label.origin.y, right: label.washRight, top: label.washTop, bottom: label.washBottom}); }
++        function move(): void { nested.x += 13; }
++        function resize(): void { surface.width = 240; }
++        function vertical(): void { surface.vertical = true; }
++        function lower(): void { nested.y += 35; }
++    }
++}

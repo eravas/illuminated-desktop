@@ -18,6 +18,166 @@ only; **L** needs local acceptance on the Inspiron (Hyprland).
     diagnosed; see V7.md "Still open");
   - qmllint: non-strict warnings (Quickshell type-metadata gaps).
 
+## Cloud verification of Phase 1 (2026-11-03)
+
+The pinned Arch image was built from `dev/Dockerfile`, with a setup-only copy adding
+bounded curl retries after an observed archive HTTP 502. TLS, package signatures and
+source checksums remain enabled. Quickshell 0.3.2/Qt 6.12 run under genuine headless
+Sway with software rendering. Mango 0.18.4 and the virtual-pointer helper built.
+
+Baseline outcomes before the verification fixes:
+
+| Check | Result |
+| --- | --- |
+| Host JavaScript / Python | 153 / 78 passed (U) |
+| Non-strict validation | 0, with QML warnings (U) |
+| Strict validation | 1; see `artifacts/development/strict-lint.txt` (U) |
+| foundation | 1: known launcher reopen assertion |
+| artifacts | 1: notification popup; preceding deployment, flip, pagination, keyboard, pointer and sheet assertions passed |
+| smoke, audio, compositor, greeter, session-ui | 0 (V; compositor and greeter use labelled protocol fixtures) |
+| reload | 1: notification D-Bus request exceeded 8 seconds |
+| single-config | 1: configuration IPC request exceeded 15 seconds |
+
+The standalone continuation runner's final aggregate message is not authoritative:
+individual `.exit` files above retain the failures. No timeout or assertion was relaxed.
+
+Verification fixes (153 Node and 78 Python tests pass; runtime evidence below):
+- NotificationHub's removed timer left `popups` reading the deleted `now` property.
+  Filter active notifications with a nonzero deadline instead; native notification
+  close/expiry already updates `active`, while quiet notifications retain deadline zero.
+- Rename SkinElement's `layer()` helper to `imageLayer()` to avoid Qt Quick Item's
+  built-in `layer` property. The baseline shell logged calls to a non-function. The rerun artifacts log has no such error.
+
+After the fixes, artifacts passes notification receive/replace/expire/dismiss,
+DND/history, lock-before-suspend, failed-lock refusal and confirmation expiry (V).
+It then fails the tray-menu fixture's hard-coded pointer click; its screenshot has
+not yet shown the sheet. Reload and single-config retain their IPC timeouts.
+These are outstanding baseline issues, not passing suites. Strict lint remains 1.
+Line delta for this verification task: QML +6/-6 (net zero), plus evidence/docs.
+
+Genuine compositor probes: Hyprland aborts both nested (missing Wayland protocols)
+and without a parent (no allocator). Mango's GLES renderer fails without a DRM FD.
+Use headless Sway here; actual Hyprland/Mango and hardware acceptance remain L.
+The logs are `artifacts/hyprland-{nested,headless}.log` and
+`artifacts/mango-headless.log`.
+
+## Phase 1.7: left-origin hands and duplicate groups
+
+- Removed Navigation's top-origin/trigger-x state, the old vertical Geometry layout,
+  CardsLayer's alternate travel/mask/sheet branches and action-origin arguments.
+- Removed packaged groups `light` and `session`; retained `levels`, `battery`, `power`,
+  `sound` and `media`. Updated docs, generated defaults and configuration tests.
+- Converted geometry tests to rotated left-to-right bounds, separation and pagination,
+  retaining tiny-screen, landscape and aligned-layout coverage (153 Node tests pass, U).
+- Python suite: 78 passed (U). Non-strict QML validation: 0, warnings retained.
+- Artifacts suite: 0 (V), including cards, keyboard/pointer, tiny-screen pagination,
+  notifications/history, safe session actions and application protocol fixtures.
+  The desk-click fallback now stays outside the rail input pass-through region;
+  the tray click resolves the rendered action instead of assuming obsolete coordinates.
+- Audio suite: 0 (V, actual private PipeWire/WirePlumber and virtual nodes).
+- Whole-suite recheck: artifacts, smoke, audio, compositor and greeter pass (V).
+  Foundation retains launcher reopen failure; reload and single-config retain their
+  baseline request timeouts. Session UI initially exposed one leftover test reference
+  to the removed group; after changing that reference to `power`, its complete
+  1280/1366 and long-locker checks pass (V). No assertion or deadline was removed.
+  Hardware/compositor L limitations above remain unchanged.
+
+Temporary startup diagnosis (`dev/cache/profile-startup.py`, ignored): status IPC
+returned in 0.30 s, notification D-Bus Notify returned successfully in 21.83 s.
+Observed Canvas paints were at most 529 ms, with one material decode of 761 ms.
+This does not establish that Canvas explains the 8/15-second baseline timeouts;
+blocking service startup remains to be investigated. No test deadlines were changed.
+
+## Phase 2: stable models and idle wakeups (in progress)
+
+### 2.1 Stable dock delegates
+
+- Mango uses `ScriptModel` with an identity key and looks up live entries by id.
+  The three-client fixture confirms each delegate is created once, title changes
+  appear, and no delegate is recreated (V, protocol fixture). Dispatch, reconciliation,
+  disconnect/reconnect and provider replacement also pass.
+- Hyprland supplies native toplevel QObjects to the model; presentation binds to
+  their live properties through the unchanged pure window helpers (U/L).
+- Delegate anchors tolerate a null parent during provider disconnect (V).
+- 153 Node tests pass (U). This task adds a narrow adapter-facing model API; pure
+  WindowLogic and Mango protocol logic are unchanged. Native verification remains L.
+
+### 2.2 Stable workspace delegates
+
+Rail workspaces now use ids with live lookups. The extended runtime fixture counts
+all nine workspace delegates and proves title churn creates none, while selection,
+reconciliation and reconnect still pass (V, Mango protocol fixture). The unused bar
+title was removed from the adapter-facing context; pure MangoLogic behavior is
+unchanged. Native Hyprland behavior remains U/L. Node: 153 passed.
+
+### 2.4 Hyprland reconciliation
+
+Removed the unconditional 10-second refresh. Health-socket reconnect still reconciles;
+the 250-ms bounded startup settle loop and one-shot seed remain (U/L). The native
+adapter still loads without a compositor, and provider replacement tests pass (V).
+No actual Hyprland reconnect is claimed. On the Inspiron, save work, restart the
+Hyprland session, and confirm the rail/dock recover without manual shell restart;
+inspect Quickshell logs for reconnect/refresh failures. Determine whether native
+Quickshell reconnect makes the retained health socket redundant before removing it.
+
+### 2.3 Brightness reads
+
+Backlight discovery runs once (and after configuration changes); the three-second
+read timer reloads `actual_brightness`/`max_brightness` through FileView without
+forking. Writes still use brightnessctl. Configured devices take precedence over
+the first discovered directory. Failed writes retain their error.
+
+The artifacts suite passes with temporary sysfs-shaped files and a write-only
+brightnessctl fixture: initial discovery, dragging, external file changes,
+missing-device errors and recovery are exercised (V, fixture). Non-strict validation
+passes with existing QML warnings; hardware permissions and actual kernel files
+remain U/L. On the Inspiron: compare `cat /sys/class/backlight/*/actual_brightness`
+with the Levels card, change brightness outside the shell, and expect the card to
+follow within three seconds. Confirm writes respect the configured device and
+report permission failures. No physical backlight is claimed here.
+
+## Phase 3: card plumbing (in progress)
+
+### 3.1 Per-kind service adapters
+
+ServiceCard delegates level reads/writes, activation, stepping, presentation,
+back selection and open/cleanup hooks to per-kind adapter objects. Battery-only
+UPower details and the charge-limit FileView live in a component loaded only by
+battery cards. Common flip, focus, gesture and confirmation mechanics remain in
+ServiceCard. Its source shrinks by 75 lines; the new registry/details add 94
+lines (net +19, reducing per-instance bindings rather than claiming a line win).
+
+Non-strict validation passes (155 Node / 78 Python tests, QML warnings retained).
+Artifacts, audio and Session UI pass (V under Sway, hardware fields still U/L).
+An initial Devices pointer miss did not reproduce in an isolated real-pointer
+probe or the complete rerun; its callback also flipped correctly directly. A
+separate notification failure was traced to the reusable container retaining
+DND from the persistence test. Acceptance reruns use a fresh disposable home;
+no assertion or timeout changed. The regular ephemeral Docker runner already
+provides a fresh home. Native battery/charge-limit/profile behavior remains L.
+
+Phase 2 full snapshot recheck: artifacts, smoke, audio, compositor, greeter and
+Session UI pass; foundation launcher reopen, reload and single-config retain
+baseline failures. Snapshot results are under
+`/workspace/illuminated-setup/phase2/artifacts/development/`.
+Code deltas (excluding generated defaults and prose): Phase 1.7 -44 lines;
+Phase 2 +97 lines, including expanded fixture coverage.
+
+### 3.2 Code-owned built-in behavior
+
+Removed 48 built-in orientation/interaction/alternatives configuration fields and
+both behavior enum schema rules. A pure kind metadata module supplies the same
+16 definitions; a migration comparison against the frozen Phase 2 defaults found
+all behavior values identical (U). Skin-defined orientation remains supported.
+Python rejects the removed fixed keys, including host overrides; labels, sheets,
+short labels and confirmation choices remain configurable. Removed keys and
+replacements are listed in CHANGELOG.
+
+Validation: 155 Node / 78 Python tests, non-strict QML exit 0 (U). Session UI passes
+both resolutions and the long-locker safety checks using the code-owned registry
+(V). No assertion or timeout was relaxed. Strict lint remains a separate failing
+baseline gate. Native compositor/hardware acceptance remains L.
+
 ## Phase 0: repository (done)
 
 The tree is a Git repository. `checkpoints/` (30 MB: history bundles and the foundation
@@ -55,7 +215,7 @@ Size: QML files 96 → 83. Code (QML/JS/Python/CJS/shell/TOML, excluding the gen
 46 MB → 20 MB compressed: a 10 MB tree, mostly skin images and the wallpaper, plus about
 10 MB of `.git`, which holds the same images once more.
 
-### Deferred from Phase 1, and why
+### Originally deferred from Phase 1 (first two items completed in Phase 1.7)
 
 - **The `origin: "top"` deck path** (`Navigation.origin/triggerX`, `CardsLayer` `fromLeft`
   branches, `Geometry.deck`). It is not bar-only: it is Navigation's fallback when

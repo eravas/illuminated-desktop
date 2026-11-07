@@ -69,7 +69,7 @@ with tempfile.TemporaryDirectory() as directory:
                 return json.loads(test('option', key))
 
             wait(lambda: 'Configuration Loaded' in log.read_text(), 'initial load')
-            wait(lambda: option('appearance.mode') == 'dark' and 'session' in option('groups'), 'resolved configuration read')
+            wait(lambda: option('appearance.mode') == 'dark' and 'power' in option('groups'), 'resolved configuration read')
 
             # A group that exists only in config.toml: live in the shell, in both binds files.
             hands = option('rail.hands') + ['recovery']

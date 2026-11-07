@@ -2,7 +2,7 @@ pragma ComponentBehavior: Bound
 import QtQuick
 import "../skin"
 import Quickshell.Io
-import Quickshell.Services.UPower
+import "../cards/kinds"
 import "../services"
 import "../theme"
 import "../config"
@@ -14,8 +14,8 @@ import "../materials"
 ArtifactCard {
     id: root
     required property string kind
-    // Title, orientation, interaction and sheet come from the [cards] registry in config.
-    readonly property var spec: Settings.card(kind)
+    // Labels/sheets/confirmation are configurable; kind adapters own behavior.
+    readonly property var spec: Adapters.spec(kind, Settings.card(kind))
     // The skin's art for this card (docs/SKINS.md, "cardArt"): {front, dark?, focus?}.
     readonly property var art: (SkinStore.manifest.cardArt || {})[kind] || null
     readonly property string title: spec.title || kind
@@ -31,55 +31,16 @@ ArtifactCard {
     readonly property real k: geo.k
     readonly property var colours: Theme.cardColours
 
-    // ── Service state ────────────────────────────────────────────────────
-    readonly property var battery: UPower.displayDevice
-    readonly property bool batteryAvailable: battery && battery.ready && battery.isPresent
-    readonly property bool charging: batteryAvailable && battery.state === UPowerDeviceState.Charging
-    readonly property bool externalPower: batteryAvailable && !UPower.onBattery && !charging
-    readonly property bool batteryFull: externalPower && (battery.state === UPowerDeviceState.FullyCharged || battery.percentage >= 0.995)
-    readonly property real levelValue: kind === "volume" ? Math.min(1, AudioState.volume)
-        : kind === "microphone" ? Math.min(1, AudioState.micVolume)
-        : kind === "brightness" ? BrightnessState.value
-        : kind === "battery" && batteryAvailable ? battery.percentage : 0
-    readonly property var connected: BluetoothState.connectedDevices
-    readonly property string detail: {
-        switch (kind) {
-        case "media": return MediaState.player ? MediaState.player.trackTitle || MediaState.player.identity : "None";
-        case "notifications": return NotificationHub.unread + " unread";
-        case "dnd": return NotificationHub.dnd ? "On" : "Off";
-        case "outputs": return AudioState.sink ? AudioState.sink.description || AudioState.sink.name : "—";
-        default: return "";
-        }
-    }
-
-    // ── Presentation ─────────────────────────────────────────────────────
-    readonly property var presentation: {
-        const c = colours;
-        switch (kind) {
-        case "battery":
-            return CardModel.battery({present: batteryAvailable, level: levelValue, charging: charging, plugged: externalPower, full: batteryFull},
-                                     c, Settings.lowChargeNumeral);
-        case "volume":
-            return CardModel.level("volume", {available: AudioState.available, level: levelValue, muted: AudioState.muted}, c);
-        case "microphone":
-            return CardModel.level("microphone", {available: AudioState.micAvailable, level: levelValue, muted: AudioState.micMuted}, c);
-        case "brightness":
-            return CardModel.level("brightness", {available: BrightnessState.available, level: levelValue}, c);
-        case "wifi":
-            return CardModel.network({enabled: NetworkState.enabled, connecting: NetworkState.connecting, failed: NetworkState.failed,
-                                      connected: NetworkState.connectedNetwork !== null || NetworkState.wiredConnected,
-                                      stage: CardModel.signalStage(NetworkState.strength),
-                                      name: NetworkState.connectedNetwork ? NetworkState.connectedNetwork.name : NetworkState.wiredConnected ? "Wired" : ""}, c);
-        case "bluetooth":
-            return CardModel.bluetooth({available: BluetoothState.available, enabled: BluetoothState.enabled, connecting: BluetoothState.connecting,
-                                        failed: BluetoothState.failed, connected: connected.length,
-                                        name: connected.length ? connected[0].name : ""}, c);
-        case "profile":
-            return {surface: CardModel.plain(c), glyph: "", value: profileText};
-        default:
-            return power ? CardModel.power(kind, c) : {surface: CardModel.plain(c), glyph: "", value: detail};
-        }
-    }
+    readonly property var views: ({outputs: outputsBack, network: networkBack, bluetooth: bluetoothBack, battery: batteryBack, menu: menuBack, confirm: confirmBack, generic: genericBack})
+    readonly property var adapter: Adapters.create(kind, root, views)
+    Loader { id: batteryLoader; active: root.kind === "battery"; source: "../cards/kinds/BatteryDetails.qml" }
+    readonly property var batteryDetails: batteryLoader.item
+    readonly property bool batteryAvailable: batteryDetails ? batteryDetails.available : false
+    readonly property bool externalPower: batteryDetails ? batteryDetails.externalPower : false
+    readonly property bool batteryFull: batteryDetails ? batteryDetails.full : false
+    readonly property var connected: adapter.connected ? adapter.connected() : []
+    readonly property real levelValue: Math.min(1, adapter.level())
+    readonly property var presentation: adapter.presentation(colours)
     readonly property var surface: presentation.surface
     readonly property var backSurface: CardModel.back(kind, surface, colours)
     readonly property var artAdjust: CardModel.art(kind, levelValue, batteryAvailable)
@@ -92,7 +53,7 @@ ArtifactCard {
     readonly property string sessionMode: power ? CardModel.sessionMode(spec) : ""
     readonly property var entries: sessionMode === "menu" ? [kind].concat(spec.alternatives) : []
     readonly property bool owned: power && (SessionState.pending === kind || entries.indexOf(SessionState.pending) >= 0)
-    readonly property bool hasBack: kind !== "brightness" && kind !== "profile" && sessionMode !== "act"
+    readonly property bool hasBack: adapter.back() !== null
     property bool confirming: false
     property bool inlineArmed: false
 
@@ -130,24 +91,11 @@ ArtifactCard {
     }
     Timer { id: inlineArm; interval: Settings.confirmArmDelay; onTriggered: root.inlineArmed = true }
 
-    onActivated: {
-        const interaction = spec.interaction;
-        if (interaction === "level") {
-            if (kind === "volume") AudioState.toggleMute();
-            else if (kind === "microphone") AudioState.toggleMic();
-        } else if (interaction === "toggle") {
-            if (kind === "wifi") NetworkState.toggle();
-            else if (kind === "bluetooth") BluetoothState.toggle();
-            else if (kind === "dnd") NotificationHub.dnd = !NotificationHub.dnd;
-            else if (kind === "profile") root.cycleProfile();
-            else if (back) flipped = !flipped;
-        } else if (sessionMode === "act") act(kind);
-        else if (back) flipped = !flipped;
-    }
+    onActivated: adapter.activate()
     onFlippedChanged: {
         if (sessionMode === "confirm") { if (flipped) SessionState.select(kind); else if (owned) SessionState.cancel(); }
         else if (power && !flipped && owned) SessionState.cancel();
-        if (kind === "wifi") NetworkState.scan(flipped);
+        adapter.onFlip(flipped);
     }
     // A confirmation never outlives the card's focus: selecting another card turns it back.
     onSelectedChanged: if (!selected && flipped && power) flipped = false
@@ -159,32 +107,15 @@ ArtifactCard {
                 root.flipped = false;
         }
     }
-    onDragStarted: startValue = kind === "volume" ? AudioState.volume : kind === "microphone" ? AudioState.micVolume : BrightnessState.value
+    onDragStarted: startValue = adapter.level()
     property real startValue: 0
-    onAdjusted: function(delta) { if (kind === "volume") AudioState.setVolume(startValue + delta); else if (kind === "microphone") AudioState.setMicVolume(startValue + delta); else if (kind === "brightness") BrightnessState.setValue(startValue + delta); }
-    onStepped: function(delta) { if (kind === "volume") AudioState.setVolume(AudioState.volume + delta * 0.05); else if (kind === "microphone") AudioState.setMicVolume(AudioState.micVolume + delta * 0.05); else if (kind === "brightness") BrightnessState.setValue(BrightnessState.value + delta * 0.05); }
-    Component.onCompleted: if (kind === "brightness") BrightnessState.read()
-    Component.onDestruction: { if (owned) SessionState.cancel(); if (kind === "wifi" && flipped) NetworkState.scan(false); }
-
-    // ── Battery details for the back ─────────────────────────────────────
-    readonly property var laptopBattery: kind === "battery" ? UPower.devices.values.find(d => d.isLaptopBattery) || null : null
-    property string chargeLimit: ""
-    FileView {
-        // Charge limit where the kernel exposes it; the row is hidden otherwise.
-        path: root.laptopBattery && root.laptopBattery.nativePath ? "/sys/class/power_supply/" + root.laptopBattery.nativePath + "/charge_control_end_threshold" : ""
-        printErrors: false
-        onLoaded: { const value = parseInt(text()); root.chargeLimit = value > 0 && value < 100 ? value + "%" : value === 100 ? "None" : ""; }
-        onLoadFailed: root.chargeLimit = ""
-    }
-    // Provisional Power Profile card: a click cycles the profiles the daemon offers.
-    function cycleProfile() {
-        const order = [PowerProfile.PowerSaver, PowerProfile.Balanced].concat(PowerProfiles.hasPerformanceProfile ? [PowerProfile.Performance] : []);
-        const i = order.indexOf(PowerProfiles.profile);
-        PowerProfiles.profile = order[(i + 1) % order.length];
-    }
-    readonly property string profileText: PowerProfiles.profile === PowerProfile.PowerSaver ? "Power saver" : PowerProfiles.profile === PowerProfile.Performance ? "Performance" : "Balanced"
-    // Time to full while charging, time to empty on battery; nothing to count down on AC otherwise.
-    readonly property string remainingText: !batteryAvailable ? "—" : charging ? CardModel.duration(battery.timeToFull) : UPower.onBattery ? CardModel.duration(battery.timeToEmpty) : "—"
+    onAdjusted: function(delta) { adapter.setLevel(startValue + delta); }
+    onStepped: function(delta) { adapter.step(delta); }
+    Component.onCompleted: adapter.onOpen()
+    Component.onDestruction: { if (owned) SessionState.cancel(); adapter.cleanup(); }
+    readonly property string profileText: batteryDetails ? batteryDetails.profileText : ""
+    readonly property string remainingText: batteryDetails ? batteryDetails.remainingText : "—"
+    readonly property string chargeLimit: batteryDetails ? batteryDetails.chargeLimit : ""
 
     // ── Front ────────────────────────────────────────────────────────────
     front: Component {
@@ -250,13 +181,7 @@ ArtifactCard {
             MaterialFace { anchors.fill: parent; surface: root.backSurface; front: false; cut: root.dogEar ? root.geo.dogEar : 0 }
             Loader {
                 anchors.fill: parent
-                sourceComponent: root.kind === "volume" || root.kind === "outputs" ? outputsBack
-                    : root.kind === "wifi" ? networkBack
-                    : root.kind === "bluetooth" ? bluetoothBack
-                    : root.kind === "battery" ? batteryBack
-                    : root.sessionMode === "menu" ? menuBack
-                    : root.sessionMode === "confirm" ? confirmBack
-                    : genericBack
+                sourceComponent: root.adapter.back()
             }
         }
     }

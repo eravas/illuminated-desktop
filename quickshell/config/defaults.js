@@ -183,16 +183,6 @@ var values = {
       "sheet": "",
       "show": "always"
     },
-    "light": {
-      "glyph": "☀",
-      "label": "Light",
-      "cards": [
-        "brightness",
-        "battery"
-      ],
-      "sheet": "",
-      "show": "always"
-    },
     "connections": {
       "glyph": "↔",
       "label": "Connections",
@@ -222,17 +212,6 @@ var values = {
       "sheet": "",
       "show": "always"
     },
-    "session": {
-      "glyph": "⏻",
-      "label": "Session",
-      "cards": [
-        "suspend",
-        "poweroff",
-        "reboot"
-      ],
-      "sheet": "",
-      "show": "always"
-    },
     "settings": {
       "glyph": "❧",
       "label": "Herbarium",
@@ -252,137 +231,86 @@ var values = {
     "volume": {
       "title": "Sound",
       "short": "",
-      "orientation": "landscape",
-      "interaction": "level",
-      "sheet": "audio",
-      "alternatives": []
+      "sheet": "audio"
     },
     "microphone": {
       "title": "Microphone",
       "short": "Mic",
-      "orientation": "portrait",
-      "interaction": "level",
-      "sheet": "audio",
-      "alternatives": []
+      "sheet": "audio"
     },
     "outputs": {
       "title": "Devices",
       "short": "",
-      "orientation": "portrait",
-      "interaction": "flip",
-      "sheet": "audio",
-      "alternatives": []
+      "sheet": "audio"
     },
     "brightness": {
       "title": "Light",
       "short": "",
-      "orientation": "landscape",
-      "interaction": "level",
-      "sheet": "brightness",
-      "alternatives": []
+      "sheet": "brightness"
     },
     "battery": {
       "title": "Charge",
       "short": "",
-      "orientation": "portrait",
-      "interaction": "flip",
-      "sheet": "settings",
-      "alternatives": []
+      "sheet": "settings"
     },
     "profile": {
       "title": "Profile",
       "short": "",
-      "orientation": "portrait",
-      "interaction": "toggle",
-      "sheet": "",
-      "alternatives": []
+      "sheet": ""
     },
     "wifi": {
       "title": "Network",
       "short": "Net",
-      "orientation": "portrait",
-      "interaction": "toggle",
-      "sheet": "network",
-      "alternatives": []
+      "sheet": "network"
     },
     "bluetooth": {
       "title": "Bluetooth",
       "short": "",
-      "orientation": "portrait",
-      "interaction": "toggle",
-      "sheet": "bluetooth",
-      "alternatives": []
+      "sheet": "bluetooth"
     },
     "media": {
       "title": "Music",
       "short": "",
-      "orientation": "portrait",
-      "interaction": "flip",
-      "sheet": "media",
-      "alternatives": []
+      "sheet": "media"
     },
     "notifications": {
       "title": "Correspondence",
       "short": "Letters",
-      "orientation": "portrait",
-      "interaction": "flip",
-      "sheet": "history",
-      "alternatives": []
+      "sheet": "history"
     },
     "dnd": {
       "title": "Quiet hours",
       "short": "Quiet",
-      "orientation": "portrait",
-      "interaction": "toggle",
-      "sheet": "history",
-      "alternatives": []
+      "sheet": "history"
     },
     "lock": {
       "title": "Lock",
       "short": "",
-      "orientation": "portrait",
-      "interaction": "session",
       "sheet": "",
-      "alternatives": [],
       "confirm": false
     },
     "suspend": {
       "title": "Sleep",
       "short": "",
-      "orientation": "portrait",
-      "interaction": "session",
       "sheet": "",
-      "alternatives": [
-        "lock",
-        "logout"
-      ],
       "confirm": false
     },
     "poweroff": {
       "title": "Shut Down",
       "short": "",
-      "orientation": "portrait",
-      "interaction": "session",
       "sheet": "",
-      "alternatives": [],
       "confirm": true
     },
     "reboot": {
       "title": "Reboot",
       "short": "",
-      "orientation": "portrait",
-      "interaction": "session",
       "sheet": "",
-      "alternatives": [],
       "confirm": true
     },
     "logout": {
       "title": "Log Out",
       "short": "",
-      "orientation": "portrait",
-      "interaction": "session",
       "sheet": "",
-      "alternatives": [],
       "confirm": true
     }
   },

@@ -21,6 +21,11 @@ Scope {
     readonly property var capabilities: ({multipleVisible: false, toggleSelection: false, urgency: true, windowState: true, focusWindow: true, moveWindow: true})
     // ── Dock (DESIGN.md §6) ──────────────────────────────────────────────
     readonly property var windows: ready ? WindowLogic.hyprlandWindows(Hyprland.toplevels.values, Hyprland.activeToplevel ? Hyprland.activeToplevel.address : "", Settings.dockMinimizeWorkspace) : []
+    // Keep native QObject identity in the dock model; presentation remains live.
+    readonly property var windowObjects: ready ? Hyprland.toplevels.values.filter(t => WindowLogic.hyprlandWindows([t], "", Settings.dockMinimizeWorkspace).length > 0) : []
+    function windowData(toplevel) {
+        return WindowLogic.hyprlandWindows([toplevel], Hyprland.activeToplevel ? Hyprland.activeToplevel.address : "", Settings.dockMinimizeWorkspace)[0] || ({});
+    }
     readonly property string currentWorkspace: ready && Hyprland.focusedMonitor && Hyprland.focusedMonitor.activeWorkspace ? String(Hyprland.focusedMonitor.activeWorkspace.name) : ""
     function send(kind, vars) {
         const request = WindowLogic.dispatchFor(kind, Hyprland.usingLua, Settings.dockDispatch, vars);
@@ -47,17 +52,7 @@ Scope {
         const seeded = !root.settled && seed.workspace !== 0 && monitor && seed.monitor === monitor.name;
         const selection = spaces.filter(w => w.active || (seeded && w.id === seed.workspace)).map(w => w.id);
         return {ready: !!monitor, modelKind: kind, monitorName: monitor ? monitor.name : name, monitorFocused: monitor ? monitor.focused || seeded : false,
-            spaces: spaces, selection: selection,
-            title: monitor && monitor.focused && root.toplevelOn(Hyprland.activeToplevel, monitor) ? Hyprland.activeToplevel.title
-                : monitor && monitor.activeWorkspace ? "Workspace " + monitor.activeWorkspace.name
-                : seeded ? "Workspace " + seed.name : "Waiting for Hyprland"};
-    }
-    // Hyprland keeps reporting the last active window after focus moves to an empty
-    // workspace; only use it while it is on that monitor's active workspace.
-    function toplevelOn(toplevel, monitor) {
-        if (!toplevel) return false;
-        if (toplevel.workspace === undefined || !monitor.activeWorkspace) return true;   // older Quickshell: no workspace link
-        return toplevel.workspace === monitor.activeWorkspace;
+            spaces: spaces, selection: selection};
     }
     function activate(space, extend) {
         if (!ready) return;
@@ -72,11 +67,10 @@ Scope {
         onConnectedChanged: if (connected) root.reconcile()
     }
     Timer { interval: 2000; running: true; repeat: true; onTriggered: if (!health.connected && health.path) health.connected = true }
-    Timer { interval: 10000; running: true; repeat: true; onTriggered: root.reconcile() }
     // The first refresh on connect can land before Hyprland has reported monitors, and the
     // focused monitor/active workspace are otherwise only filled by the next event (an idle
     // desktop may send none). Ask every 250 ms until both are known, for at most 10 s;
-    // the 10 s reconcile and events take over after that, so this never becomes polling.
+    // native events take over after that, so this never becomes permanent polling.
     property int settleTries: 0
     Timer {
         interval: 250; repeat: true

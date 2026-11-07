@@ -13,7 +13,8 @@ has been verified, and how, are in [docs/STATUS.md](docs/STATUS.md).
   (the Herbarium "Align cards to grid" toggle now sets it); the confirmation timeout comes
   only from `reading.options.confirmTimeout`.
 - **Five reading options with no implementation removed.**
-- A 2 Hz timer in the notification hub that updated an unread property is gone.
+- The notification hub no longer polls at 2 Hz; popups follow native notification expiry.
+- Fixed skin rendering calls colliding with Qt Quick's built-in `layer` property.
 - The `Materials.js` facade moved from `quickshell/materials/` to `scripts/skin/` (tests and
   the skin build only); `CommandAction.qml` moved from `tools/` to `services/`.
 - The tree is now a Git repository; `checkpoints/` (history bundles, foundation tarball) and
@@ -22,11 +23,27 @@ has been verified, and how, are in [docs/STATUS.md](docs/STATUS.md).
   RUNTIME-REPORT, CARD-HARDENING-V2, CONFIG-V3, DEVELOPMENT-REPORT, VALIDATION) are deleted;
   Git history keeps them.
 
+- Removed the obsolete top-origin deck path. Hands always enter from the left, including with the rail disabled.
+- Removed duplicate built-in groups `light` and `session`; use `levels`/`battery` and `power`.
+
+- Dock and rail workspace delegates survive title changes; titles still update live.
+- Brightness polling reads sysfs instead of spawning brightnessctl every three seconds.
+- Hyprland reconciles on reconnect rather than on an unconditional ten-second timer.
+
+- Built-in card orientation, gestures and session-menu alternatives now live in the kind adapters. Labels, sheets and confirmation remain configurable.
+
 ### Removed keys
 
-`illuminated apply` now rejects these in `config.toml`:
+`illuminated apply` rejects removed fixed keys in `config.toml`. The `groups.light`
+and `groups.session` rows remove packaged defaults: explicitly declared user groups
+remain supported, including groups with those names.
 
 | Removed | Use instead |
+| `cards.*.orientation` | Fixed by the built-in kind; skin cards declare their own |
+| `cards.*.interaction` | Fixed by the built-in kind |
+| `cards.*.alternatives` | Sleep has Lock/Log Out in its built-in menu |
+| `groups.light` | `groups.levels` and `groups.battery` |
+| `groups.session` | `groups.power` |
 | --- | --- |
 | `features.bar`, `[bar]` (all keys), `[bar.opens]`, `dimensions.barHeight` | the rail (`[rail]`); time format: `clock.timeFormat` |
 | `features.controls` | — |

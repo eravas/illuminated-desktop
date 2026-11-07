@@ -41,7 +41,7 @@ PanelWindow {
         return spec.show === "battery" ? batteryPresent : spec.show === "player" ? MediaState.player !== null : true;
     }
     // Every hand and sheet the rail opens goes through the action registry (skin/Actions.qml).
-    function deal(name, item) { Actions.run("deal:" + name, {screen: root.screen, y: item.mapToItem(null, 0, item.height / 2).y, from: "left"}); }
+    function deal(name, item) { Actions.run("deal:" + name, {screen: root.screen, y: item.mapToItem(null, 0, item.height / 2).y}); }
     // The skin's rail layout; hands named by elements, and the configured hands left over.
     readonly property var items: (SkinStore.manifest.rail && SkinStore.manifest.rail.items) || []
     readonly property var handsWithElements: items.filter(i => i.hand && i.element && SkinStore.element(i.element)).map(i => i.hand)

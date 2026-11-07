@@ -7,7 +7,7 @@ ShellRoot {
     id: root
     CardsLayer { id: cards }
     Loader { source: "osd.qml" }
-    Component.onCompleted: Navigation.open("sound", Quickshell.screens[0], 500, "top")
+    Component.onCompleted: Navigation.open("sound", Quickshell.screens[0], 360)
     function levelFill(node) { if (node.objectName === "service-level-fill") return {width:node.width,height:node.height}; for (const child of node.children || []) { const found=levelFill(child); if(found)return found; } return null; }
     IpcHandler {
         target: "test"

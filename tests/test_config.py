@@ -26,10 +26,10 @@ def errors(user):
 class Merge(unittest.TestCase):
     def test_partial_table_override_keeps_siblings(self):
         # v2 bug: overriding one menu wiped every other group.
-        values = resolve({"groups": {"session": {"cards": ["lock", "poweroff"]}}}).values
-        self.assertEqual(values["groups"]["session"]["cards"], ["lock", "poweroff"])
+        values = resolve({"groups": {"power": {"cards": ["lock", "poweroff"]}}}).values
+        self.assertEqual(values["groups"]["power"]["cards"], ["lock", "poweroff"])
         self.assertEqual(values["groups"]["sound"]["cards"], ["volume", "microphone", "outputs"])
-        self.assertEqual(values["groups"]["session"]["glyph"], "⏻")
+        self.assertEqual(values["groups"]["power"]["glyph"], "P")
 
     def test_arrays_replace(self):
         values = resolve({"rail": {"hands": ["power"]}}).values
@@ -82,13 +82,13 @@ class Validation(unittest.TestCase):
             self.assertFalse(set(palette) & set(defaults["semantic"]), "a semantic colour is mode-dependent")
         self.assertEqual(set(defaults["palettes"]["dark"]), set(defaults["palettes"]["light"]))
 
-    def test_menu_entries_cannot_nest(self):
-        self.assertError({"cards": {"poweroff": {"alternatives": ["suspend"]}}}, "cards.poweroff.alternatives", "itself a menu")
+    def test_builtin_behavior_is_not_configurable(self):
+        for key, value in (("orientation", "landscape"), ("interaction", "toggle"), ("alternatives", ["suspend"])):
+            self.assertError({"cards": {"poweroff": {key: value}}}, "cards.poweroff." + key, "unknown key")
 
     def test_default_session_deck(self):
         values = resolve({}).values
-        self.assertEqual(values["groups"]["session"]["cards"], ["suspend", "poweroff", "reboot"])
-        self.assertEqual(values["cards"]["suspend"]["alternatives"], ["lock", "logout"])
+        self.assertEqual(values["groups"]["power"]["cards"], ["suspend", "poweroff", "reboot"])
         self.assertFalse(values["cards"]["suspend"]["confirm"])
         self.assertFalse(values["cards"]["lock"]["confirm"])
         for kind in ("poweroff", "reboot", "logout"):
@@ -149,7 +149,7 @@ class Validation(unittest.TestCase):
         self.assertError({"host": {"elsewhere": {"typo": 1}}}, "host.elsewhere.typo", "unknown key")
 
     def test_large_group_warns_but_resolves(self):
-        result = resolve({"groups": {"session": {"cards": ["lock", "suspend", "poweroff", "reboot"]}}})
+        result = resolve({"groups": {"power": {"cards": ["lock", "suspend", "poweroff", "reboot"]}}})
         self.assertTrue(any(d.level == "warning" and "paginate" in d.message for d in result.diagnostics))
 
     def test_toml_syntax_error_has_location(self):
